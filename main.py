@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import random
@@ -175,4 +175,4 @@ async def finish_game(game_id: int):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)  
