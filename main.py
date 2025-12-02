@@ -4,8 +4,23 @@ from pydantic import BaseModel
 import random
 import json
 from typing import List, Optional
+import os
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# CORS middleware для разрешения запросов с фронтенда
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # В продакшене укажите конкретные домены
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Обслуживание статических файлов (фронтенд)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/", StaticFiles(directory="static", html=True), name="frontend")
 
 
 # Модели Pydantic
