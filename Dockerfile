@@ -3,6 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY public/ ./public/
+COPY public/tocenJS.txt .
 COPY src/ ./src/
 RUN npm run build
 RUN npm install -g serve
