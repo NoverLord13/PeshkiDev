@@ -1,70 +1,170 @@
-let score = 0
+let score = 0;
+let panorama;
+let places = [];
+let currentPlace;
+let coordinates;
+let country;
 
-let panorama
-
-// Различные места
-var places = [
-    [{ lat: 62.027575,  lng: 129.731505 }, {country: 'Ленин'}], // Lenin Square, Yakutsk
-    [{ lat: 62.016897,  lng: 129.705356 }, {country: 'КФЕН'}], // KFEN, Yakutsk
-    [{ lat: 62.157122,  lng: 117.650234 }, {country: 'Сунтар'}], // Tandem, Suntar
-    [{ lat: 61.999261,  lng: 132.433982 }, {country: 'Чурапча'}], // Cafe Dragon, Churapcha
-    [{ lat: 61.479675,  lng: 129.146294 },  {country: 'Покровск'}], // Chram, Pokrovsk
-    [{ lat: 62.533585,   lng: 113.976676 }, {country: 'Мирный'}], // Mirniy
-    [{ lat: 62.723927,  lng: 129.658311 },  {country: 'Намцы'}], // Namsi
-    [{ lat: 62.160856,  lng: 129.834377 }, {country: 'Жатай'}], // Jatai
-]     
-  
-let currentPlace = places[Math.floor(Math.random() * (places.length))]  // Рандомайзер
-let coordinates = currentPlace[0] // Получение координат
-let country = currentPlace[1].country // Получение названия (это мы еще поменяем на нормальную как в geoguessr)
-
-// Перезапуск игры после окончания
-let reconfigure = () => { 
-  document.getElementById("score").innerHTML = "Твой текущий счет: " + score
-  currentPlace = places[Math.floor(Math.random() * (places.length))]
-  coordinates = currentPlace[0]
-  country = currentPlace[1].country
-
-  initialize()
+// Загрузка мест из JSON
+async function loadPlaces() {
+  try {
+    const response = await fetch('data/places.json');
+    places = await response.json();
+    return places;
+  } catch (error) {
+    console.error('Ошибка загрузки places.json:', error);
+    return [];
+  }
 }
 
-// Проверка ответа
-const guess= () => {
-  var guess = window.prompt("Где это место?")
-  if(guess === country) {
-    score++
-    alert("Правильно! Текущие очки: " + score)
-    reconfigure()
-  } else {
-    score = 0
-    alert("Неправильно! Текущие очки: " + score)
-    reconfigure()
+// Перезапуск игры после окончания
+let reconfigure = async () => { 
+  document.getElementById("score").innerHTML = "Твой текущий счет: " + score;
+  
+  if (places.length === 0) {
+    await loadPlaces();
   }
+  
+  currentPlace = places[Math.floor(Math.random() * places.length)];
+  coordinates = { lat: currentPlace.lat, lng: currentPlace.lng };
+  country = currentPlace.name;
+
+  initialize();
+}
+
+// Показать модальное окно для ввода ответа
+const guess = () => {
+  showGuessModal();
+}
+
+// Модальное окно для ввода ответа
+function showGuessModal() {
+  const modal = document.getElementById('guessModal');
+  const input = document.getElementById('guessInput');
+  const submitBtn = document.getElementById('guessSubmit');
+  
+  // Сбрасываем поле ввода
+  input.value = '';
+  
+  // Показываем модальное окно
+  modal.style.display = 'flex';
+  
+  // Фокус на поле ввода
+  input.focus();
+  
+  // Обработчик отправки
+  const handleSubmit = () => {
+    const userGuess = input.value.trim();
+    if (userGuess) {
+      modal.style.display = 'none';
+      checkAnswer(userGuess);
+    }
+  };
+  
+  // Обработчики событий
+  submitBtn.onclick = handleSubmit;
+  
+  input.onkeypress = (e) => {
+    if (e.key === 'Enter') {
+      handleSubmit();
+    }
+  };
+  
+  // Закрытие по клику вне окна
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  };
+}
+
+// Проверка ответа и показ результата
+function checkAnswer(userGuess) {
+  const isCorrect = userGuess.toLowerCase() === country.toLowerCase();
+  
+  if (isCorrect) {
+    score++;
+    showResultModal(
+      "Правильно! ✅", 
+      `Это место: ${country}.<br>Твой текущий счет: ${score}`,
+      true
+    );
+  } else {
+    showResultModal(
+      "Неправильно! ❌", 
+      `Это место: ${country}.<br>Твой финальный счет: ${score}`,
+      false
+    );
+    score = 0;
+  }
+}
+
+// Модальное окно с результатом
+function showResultModal(title, message, isCorrect) {
+  const modal = document.getElementById('resultModal');
+  const titleEl = document.getElementById('resultTitle');
+  const messageEl = document.getElementById('resultMessage');
+  const nextBtn = document.getElementById('resultNext');
+  
+  // Устанавливаем содержимое
+  titleEl.textContent = title;
+  messageEl.innerHTML = message;
+  
+  // Меняем цвет заголовка в зависимости от результата
+  titleEl.style.color = isCorrect ? '#4CAF50' : '#f44336';
+  
+  // Показываем модальное окно
+  modal.style.display = 'flex';
+  
+  // Обработчик кнопки "Далее"
+  nextBtn.onclick = () => {
+    modal.style.display = 'none';
+    reconfigure();
+  };
+  
+  // Закрытие по клику вне окна
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+      reconfigure();
+    }
+  };
 }
 
 // Настройка стритвью
 function initialize() {
-  panorama = new google.maps.StreetViewPanorama(
-    document.getElementById("street-view"),
-    {
-      position: coordinates,
-      pov: { heading: 165, pitch: 0 },
-      zoom: 1,
-    }
-  )
-}    
-
-
-async function initializeWithToken() {
-        const response = await fetch('tocenJS.txt');
-        const token = (await response.text()).trim();
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${token}&callback=initialize&libraries=&v=weekly`;
-        script.async = true;
-        document.head.appendChild(script);
+  if (!panorama) {
+    panorama = new google.maps.StreetViewPanorama(
+      document.getElementById("street-view"),
+      {
+        position: coordinates,
+        pov: { heading: 165, pitch: 0 },
+        zoom: 1,
+      }
+    );
+  } else {
+    panorama.setPosition(coordinates);
+  }
 }
+
+// Инициализация игры
+async function initializeGame() {
+  await loadPlaces();
+  await reconfigure();
+}
+
+// Загрузка Google Maps API
+async function initializeWithToken() {
+  const response = await fetch('tocenJS.txt');
+  const token = (await response.text()).trim();
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${token}&callback=initializeGame&libraries=&v=weekly`;
+  script.async = true;
+  document.head.appendChild(script);
+}
+
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeWithToken);
+  document.addEventListener('DOMContentLoaded', initializeWithToken);
 } else {
-    initializeWithToken();
+  initializeWithToken();
 }
