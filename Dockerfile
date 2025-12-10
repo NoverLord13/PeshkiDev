@@ -1,7 +1,10 @@
-FROM python:3.14-slim
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY main.py .
-COPY data/places.json .
-EXPOSE 8000
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY public/ ./public/
+COPY src/ ./src/
+RUN npm run build
+RUN npm install -g serve
+EXPOSE 3000
+CMD ["serve", "-s", "build", "-l", "3000"]

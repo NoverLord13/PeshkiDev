@@ -1,0 +1,95 @@
+.mode-screen {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.mode-content {
+  background: white;
+  padding: 40px 50px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  max-width: 520px;
+  width: 100%;
+  animation: fadeIn 0.4s ease-in;
+}
+
+.mode-content h1 {
+  font-size: 30px;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.mode-description {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 30px;
+  line-height: 1.5;
+}
+
+.mode-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.mode-button {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+  color: #fff;
+}
+
+.mode-button.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.45);
+}
+
+.mode-button.secondary {
+  background: linear-gradient(135deg, #26c6da 0%, #00acc1 100%);
+  box-shadow: 0 8px 24px rgba(0, 172, 193, 0.4);
+}
+
+.mode-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+}
+
+.mode-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.mode-back {
+  margin-top: 10px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
