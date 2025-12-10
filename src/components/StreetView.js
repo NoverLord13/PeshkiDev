@@ -22,6 +22,8 @@ function StreetView({ location }) {
         heading: Math.random() * 360,
         pitch: 0
       });
+    } else if (!panoramaRef.current && location && window.google && window.google.maps) {
+      initStreetView();
     }
   }, [location]);
 

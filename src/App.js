@@ -3,7 +3,6 @@ import './App.css';
 import Game from './components/Game';
 import StartScreen from './components/StartScreen';
 import ModeSelect from './components/ModeSelect';
-import places from './data/places.json';
 
 function App() {
   const [apiKey, setApiKey] = useState('');
@@ -71,8 +70,6 @@ function App() {
       )}
       {screen === 'game' && (
         <Game
-          apiKey={apiKey}
-          places={places}
           onReset={resetGame}
           mode={gameMode}
         />

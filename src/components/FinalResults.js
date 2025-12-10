@@ -35,9 +35,6 @@ function FinalResults({ totalScore, roundResults, onPlayAgain }) {
                 <span className="round-number">Раунд {result.round}</span>
                 <span className="round-score">{result.score.toLocaleString()}</span>
               </div>
-              <div className="round-location">
-                <strong>{result.location?.city}</strong> • {result.location?.place}
-              </div>
               <div className="round-stats">
                 <span className="round-distance">
                   📍 {result.distance < 1 
@@ -45,9 +42,6 @@ function FinalResults({ totalScore, roundResults, onPlayAgain }) {
                     : `${result.distance.toFixed(1)} км`
                   }
                 </span>
-                {result.hintPenalty > 0 && (
-                  <span className="hint-penalty">💡 -{result.hintPenalty}</span>
-                )}
               </div>
             </div>
           ))}

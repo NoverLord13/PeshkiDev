@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Game.css';
 import StreetView from './StreetView';
 import GuessMap from './GuessMap';
@@ -6,8 +6,18 @@ import ResultModal from './ResultModal';
 import FinalResults from './FinalResults';
 
 const TOTAL_ROUNDS = 5;
+const REGION_BOUNDS = {
+  // Примерные границы Республики Саха (Якутия)
+  north: 76,
+  south: 55,
+  west: 105,
+  east: 151,
+};
+const SEARCH_RADIUS = 30000; // до 30 км вокруг случайной точки
+const MAX_ATTEMPTS_PER_ROUND = 30;
+const HELP_RADIUS_KM = 100;
 
-function Game({ apiKey, places, onReset, mode = 'classic' }) {
+function Game({ onReset, mode = 'classic' }) {
   const [currentRound, setCurrentRound] = useState(1);
   const [roundLocations, setRoundLocations] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -18,39 +28,139 @@ function Game({ apiKey, places, onReset, mode = 'classic' }) {
   const [distance, setDistance] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [roundResults, setRoundResults] = useState([]);
-  const [hintsUsed, setHintsUsed] = useState([]);
-  const [hintPenalty, setHintPenalty] = useState(0);
   const [cityCenters, setCityCenters] = useState({});
   const [availableCities, setAvailableCities] = useState([]);
   const [selectedCity, setSelectedCity] = useState('');
+  const [loadingRounds, setLoadingRounds] = useState(true);
+  const [roundsError, setRoundsError] = useState('');
+  const [helpActive, setHelpActive] = useState(false);
+  const [helpCenter, setHelpCenter] = useState(null);
+  const streetViewServiceRef = useRef(null);
+
+  const totalRounds = roundLocations.length || TOTAL_ROUNDS;
+
+  // Заглушка для звуков — подключите реальный проигрыватель позже
+  const playSound = (type) => {
+    // TODO: добавить воспроизведение звуков по типу (help, guess, next, finish)
+  };
 
   // Инициализация раундов
   useEffect(() => {
-    const validPlaces = places.filter(p => p.lat && p.lng);
-    const shuffled = [...validPlaces].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, TOTAL_ROUNDS);
-    setRoundLocations(selected);
-    setCurrentLocation(selected[0]);
+    if (window.google && window.google.maps) {
+      streetViewServiceRef.current = new window.google.maps.StreetViewService();
+      initRounds();
+    }
+  }, []);
 
-    // Центры городов для упрощенного режима
-    const cityMap = {};
-    validPlaces.forEach((p) => {
-      if (!p.city) return;
-      if (!cityMap[p.city]) {
-        cityMap[p.city] = { lat: p.lat, lng: p.lng, count: 1 };
-      } else {
-        cityMap[p.city].lat += p.lat;
-        cityMap[p.city].lng += p.lng;
-        cityMap[p.city].count += 1;
+  const getRandomPointInYakutia = () => ({
+    lat: REGION_BOUNDS.south + Math.random() * (REGION_BOUNDS.north - REGION_BOUNDS.south),
+    lng: REGION_BOUNDS.west + Math.random() * (REGION_BOUNDS.east - REGION_BOUNDS.west),
+  });
+
+  const getPanoramaAtPoint = (point) => new Promise((resolve) => {
+    if (!streetViewServiceRef.current) return resolve(null);
+    streetViewServiceRef.current.getPanorama(
+      {
+        location: point,
+        radius: SEARCH_RADIUS,
+        preference: window.google.maps.StreetViewPreference.NEAREST,
+        source: window.google.maps.StreetViewSource.OUTDOOR,
+      },
+      (data, status) => {
+        if (status === window.google.maps.StreetViewStatus.OK) {
+          resolve(data);
+        } else {
+          resolve(null);
+        }
       }
-    });
-    Object.keys(cityMap).forEach((city) => {
-      cityMap[city].lat /= cityMap[city].count;
-      cityMap[city].lng /= cityMap[city].count;
-    });
-    setCityCenters(cityMap);
-    setAvailableCities(Object.keys(cityMap).sort());
-  }, [places]);
+    );
+  });
+
+  const findPanoramaInYakutia = async () => {
+    for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_ROUND; attempt++) {
+      const randomPoint = getRandomPointInYakutia();
+      const panorama = await getPanoramaAtPoint(randomPoint);
+      if (panorama) return panorama;
+    }
+    return null;
+  };
+
+  const mapPanoramaToLocation = (panorama, index) => {
+    const latLng = panorama.location.latLng;
+    return {
+      id: panorama.location.pano || index,
+      lat: latLng.lat(),
+      lng: latLng.lng(),
+      city: panorama.location.description?.split(',')[0]?.trim() || 'Якутия',
+      place: panorama.location.shortDescription || 'Панорама',
+      hint: 'Республика Саха (Якутия)',
+    };
+  };
+
+  const initRounds = async () => {
+    setLoadingRounds(true);
+    setRoundsError('');
+
+    const generated = [];
+    for (let i = 0; i < TOTAL_ROUNDS; i++) {
+      const panorama = await findPanoramaInYakutia();
+      if (!panorama) break;
+      generated.push(mapPanoramaToLocation(panorama, i));
+    }
+
+    if (generated.length > 0) {
+      setRoundLocations(generated);
+      setCurrentLocation(generated[0]);
+      setCurrentRound(1);
+      setGuessedLocation(null);
+      setShowResult(false);
+      setRoundScore(0);
+      setTotalScore(0);
+      setRoundResults([]);
+      setDistance(0);
+      setSelectedCity('');
+      setGameFinished(false);
+      setHelpActive(false);
+      setHelpCenter(generated[0] ? getHelpCenter(generated[0]) : null);
+
+      // Центры городов для упрощенного режима
+      const cityMap = {};
+      generated.forEach((p) => {
+        if (!p.city) return;
+        if (!cityMap[p.city]) {
+          cityMap[p.city] = { lat: p.lat, lng: p.lng, count: 1 };
+        } else {
+          cityMap[p.city].lat += p.lat;
+          cityMap[p.city].lng += p.lng;
+          cityMap[p.city].count += 1;
+        }
+      });
+      Object.keys(cityMap).forEach((city) => {
+        cityMap[city].lat /= cityMap[city].count;
+        cityMap[city].lng /= cityMap[city].count;
+      });
+      setCityCenters(cityMap);
+      setAvailableCities(Object.keys(cityMap).sort());
+    } else {
+      setRoundsError('Не удалось найти панорамы в Якутии. Попробуйте еще раз.');
+    }
+
+    setLoadingRounds(false);
+  };
+
+  const getHelpCenter = (location) => {
+    if (!location) return null;
+    // Смещаем центр круга, чтобы точка не совпадала с искомой
+    const maxOffsetKm = HELP_RADIUS_KM * 0.6; // до 60% радиуса
+    const r = Math.random() * maxOffsetKm;
+    const angle = Math.random() * Math.PI * 2;
+    const dLat = (r * Math.cos(angle)) / 111; // км -> градусы широты
+    const dLng = (r * Math.sin(angle)) / (111 * Math.cos(location.lat * Math.PI / 180 || 1));
+    return {
+      lat: location.lat + dLat,
+      lng: location.lng + dLng,
+    };
+  };
 
   const calculateDistance = (lat1, lng1, lat2, lng2) => {
     const R = 6371; // Радиус Земли в км
@@ -75,16 +185,9 @@ function Game({ apiKey, places, onReset, mode = 'classic' }) {
     return 0;
   };
 
-  const handleHint = (hintLevel) => {
-    if (hintsUsed.includes(hintLevel)) return;
-    
-    const penalty = hintLevel === 1 ? 1000 : 1500;
-    setHintPenalty(prev => prev + penalty);
-    setHintsUsed(prev => [...prev, hintLevel]);
-  };
-
   const handleGuess = (lat, lng) => {
     if (!currentLocation) return;
+    playSound('guess');
     
     setGuessedLocation({ lat, lng });
     const dist = calculateDistance(
@@ -93,8 +196,7 @@ function Game({ apiKey, places, onReset, mode = 'classic' }) {
       lat,
       lng
     );
-    const baseScore = calculateScore(dist);
-    const finalScore = Math.max(0, baseScore - hintPenalty);
+    const finalScore = calculateScore(dist);
     
     setDistance(dist);
     setRoundScore(finalScore);
@@ -105,8 +207,6 @@ function Game({ apiKey, places, onReset, mode = 'classic' }) {
       round: currentRound,
       distance: dist,
       score: finalScore,
-      baseScore: baseScore,
-      hintPenalty: hintPenalty,
       actual: { lat: currentLocation.lat, lng: currentLocation.lng },
       guessed: { lat, lng },
       location: currentLocation
@@ -122,20 +222,43 @@ function Game({ apiKey, places, onReset, mode = 'classic' }) {
   };
 
   const nextRound = () => {
-    if (currentRound >= TOTAL_ROUNDS) {
+    if (currentRound >= totalRounds) {
       setGameFinished(true);
+      playSound('finish');
     } else {
+      const nextLocation = roundLocations[currentRound];
+      if (!nextLocation) {
+        setGameFinished(true);
+        return;
+      }
       setCurrentRound(prev => prev + 1);
-      setCurrentLocation(roundLocations[currentRound]);
+      setCurrentLocation(nextLocation);
       setGuessedLocation(null);
       setShowResult(false);
       setRoundScore(0);
       setDistance(0);
-      setHintsUsed([]);
-      setHintPenalty(0);
       setSelectedCity('');
+      setHelpActive(false);
+      setHelpCenter(getHelpCenter(nextLocation));
+      playSound('next');
     }
   };
+
+  if (loadingRounds) {
+    return <div className="loading">Ищем случайные панорамы Якутии...</div>;
+  }
+
+  if (roundsError) {
+    return (
+      <div className="loading">
+        {roundsError}
+        <div style={{ marginTop: '12px' }}>
+          <button className="next-button" onClick={initRounds}>Попробовать снова</button>
+          <button className="next-button" onClick={onReset} style={{ marginLeft: '8px' }}>Назад</button>
+        </div>
+      </div>
+    );
+  }
 
   if (gameFinished) {
     return (
@@ -155,7 +278,7 @@ function Game({ apiKey, places, onReset, mode = 'classic' }) {
     <div className="game">
       <div className="game-header">
         <div className="round-info">
-          Раунд {currentRound} / {TOTAL_ROUNDS}
+          Раунд {currentRound} / {totalRounds}
         </div>
         <div className="score-info">
           Очки: {totalScore.toLocaleString()}
@@ -164,25 +287,19 @@ function Game({ apiKey, places, onReset, mode = 'classic' }) {
 
       {!showResult && (
         <div className="hints-panel">
-          <button 
-            className={`hint-button ${hintsUsed.includes(1) ? 'used' : ''}`}
-            onClick={() => handleHint(1)}
-            disabled={hintsUsed.includes(1)}
+          <button
+            className={`hint-button ${helpActive ? 'used' : ''}`}
+            onClick={() => {
+              setHelpActive(true);
+              if (!helpCenter && currentLocation) {
+                setHelpCenter(getHelpCenter(currentLocation));
+              }
+              playSound('help');
+            }}
+            disabled={helpActive}
           >
-            {hintsUsed.includes(1) ? `🏙️ ${currentLocation.city}` : '💡 Город (-1000)'}
+            {helpActive ? 'Радиус подсказки включен' : 'Помощь (радиус)'}
           </button>
-          <button 
-            className={`hint-button ${hintsUsed.includes(2) ? 'used' : ''}`}
-            onClick={() => handleHint(2)}
-            disabled={hintsUsed.includes(2)}
-          >
-            {hintsUsed.includes(2) ? `📍 ${currentLocation.place}` : '💡 Место (-1500)'}
-          </button>
-          {hintsUsed.includes(1) && (
-            <div className="hint-text">
-              {currentLocation.hint}
-            </div>
-          )}
         </div>
       )}
 
@@ -194,8 +311,11 @@ function Game({ apiKey, places, onReset, mode = 'classic' }) {
         <GuessMap 
           onGuess={handleGuess}
           disabled={showResult}
-          actualLocation={showResult ? currentLocation : null}
+          actualLocation={currentLocation}
           guessedLocation={guessedLocation}
+          helpActive={helpActive}
+          helpRadiusKm={HELP_RADIUS_KM}
+          helpCenter={helpCenter}
         />
       )}
 
@@ -229,9 +349,10 @@ function Game({ apiKey, places, onReset, mode = 'classic' }) {
           distance={distance}
           score={roundScore}
           currentRound={currentRound}
-          totalRounds={TOTAL_ROUNDS}
+          totalRounds={totalRounds}
           onNext={nextRound}
           location={currentLocation}
+          guessedLocation={guessedLocation}
         />
       )}
     </div>
