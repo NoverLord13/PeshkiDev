@@ -12,16 +12,14 @@ function App() {
   const [gameMode, setGameMode] = useState('classic'); // classic | simple
 
   useEffect(() => {
-    // Загружаем API ключ
-    fetch('/tocenJS.txt')
-      .then(response => response.text())
-      .then(key => {
-        const trimmedKey = key.trim();
-        setApiKey(trimmedKey);
-        loadGoogleMapsAPI(trimmedKey);
-      })
-      .catch(err => console.error('Ошибка загрузки API ключа:', err));
-  }, []);
+  const key = process.env.REACT_APP_GMAPS_API_KEY;
+  if (!key) {
+    console.error('API ключ не найден в переменных окружения');
+    return;
+  }
+  setApiKey(key);
+  loadGoogleMapsAPI(key);
+}, []);
 
   const loadGoogleMapsAPI = (key) => {
     if (window.google) {
