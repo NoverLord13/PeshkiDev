@@ -18,7 +18,7 @@ function ResultModal({ distance, score, currentRound, totalRounds, onNext, locat
 
   const grade = getGrade(score);
 
-  console.log(`RESULT: Раунд 1 завершен. Дистанция: ${dist} км, Очки: ${score}`);
+  console.log(`RESULT: Раунд 1 завершен. Дистанция: ${formatDistance(distance)} км, Очки: ${score}`);
 
   return (
     <div className="result-modal-overlay">
