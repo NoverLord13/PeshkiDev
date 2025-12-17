@@ -7,3 +7,12 @@
   filter: invert(1);
 }
 
+/* Положение стандартных контролов Google (зум, компас) — чуть выше центра */
+.street-view .gm-bundled-control-on-bottom,
+.street-view .gm-bundled-control {
+  top: 20% !important;
+  bottom: auto !important;
+  right: 50px !important;
+  transform: translateY(-50%);
+}
+

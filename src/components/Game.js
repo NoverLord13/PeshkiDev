@@ -74,11 +74,30 @@ function Game({ onReset, language = 'ru' }) {
     );
   });
 
+  const isPanoramaInYakutia = (panorama) => {
+    if (!panorama || !panorama.location) return false;
+    const desc = (panorama.location.description || '').toLowerCase();
+    const shortDesc = (panorama.location.shortDescription || '').toLowerCase();
+    const text = `${desc} ${shortDesc}`;
+
+    const keywords = [
+      'якутия',
+      'республика саха',
+      'sakha republic',
+      'yakutia',
+      'yakutsk',
+      'якутск',
+      'саха сирэ',
+    ];
+
+    return keywords.some((k) => text.includes(k));
+  };
+
   const findPanoramaInYakutia = async () => {
     for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_ROUND; attempt++) {
       const randomPoint = getRandomPointInYakutia();
       const panorama = await getPanoramaAtPoint(randomPoint);
-      if (panorama) return panorama;
+      if (panorama && isPanoramaInYakutia(panorama)) return panorama;
     }
     return null;
   };
