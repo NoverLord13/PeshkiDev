@@ -9,7 +9,7 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
   const lineRef = useRef(null);
   const helpCircleRef = useRef(null);
   const clickListenerRef = useRef(null);
-
+  const [hasMarker, setHasMarker] = useState(false); // Новое состояние для отслеживания маркера
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(window.innerWidth > 600); 
   
@@ -50,6 +50,12 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
         lineRef.current.setMap(null);
         lineRef.current = null;
       }
+      // Сбрасываем состояние маркера при новом раунде
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+        markerRef.current = null;
+      }
+      setHasMarker(false);
     }
   }, [actualLocation, guessedLocation]);
 
@@ -131,6 +137,9 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
         strokeWeight: 3,
       },
     });
+    
+    // Устанавливаем состояние, что маркер создан
+    setHasMarker(true);
   };
 
   const showResults = () => {
@@ -178,6 +187,10 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
     onGuess(pos.lat(), pos.lng());
   };
 
+  const handleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   return (
     <>
       {/* Кнопка открытия карты на мобильных */}
@@ -204,7 +217,7 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
           <div className="map-header">
             <button 
               className="expand-button"
-              onClick={() => setIsExpanded(!isExpanded)}
+              onClick={handleExpand}
             >
               {isExpanded ? '−' : '+'}
             </button>
@@ -215,16 +228,9 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
           {/* Кнопка Угадать теперь отображается всегда, когда карта не развернута */}
           {!disabled && !isExpanded && (
             <button 
-              className="guess-button"
+              className="guess-button small-map-btn"
               onClick={handleGuess}
-              disabled={!markerRef.current}
-              style={{
-                position: 'absolute',
-                bottom: '20px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 12
-              }}
+              disabled={!hasMarker}
             >
               {isYakut ? 'Билиир' : 'Угадать'}
             </button>
@@ -233,9 +239,9 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
           {/* Кнопка Угадать для развернутого режима */}
           {!disabled && isExpanded && (
             <button 
-              className="guess-button"
+              className="guess-button expanded-btn"
               onClick={handleGuess}
-              disabled={!markerRef.current}
+              disabled={!hasMarker}
             >
               {isYakut ? 'Билиир' : 'Угадать'}
             </button>

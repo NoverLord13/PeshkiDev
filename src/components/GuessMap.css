@@ -67,8 +67,12 @@
   transform: translateY(-50%);
 }
 
-/* Кнопка */
-.guess-button {
+/* Кнопка для маленькой карты */
+.guess-button.small-map-btn {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
@@ -79,10 +83,30 @@
   cursor: pointer;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   transition: transform 0.2s;
+  z-index: 12;
+}
+
+/* Кнопка для развернутой карты */
+.guess-button.expanded-btn {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: transform 0.2s;
+  z-index: 12;
 }
 
 .guess-button:hover:not(:disabled) {
-  transform: translateY(-2px);
+  transform: translateX(-50%) translateY(-2px);
 }
 
 .guess-button:disabled {
@@ -185,4 +209,3 @@
     display: none;
   }
 }
-
