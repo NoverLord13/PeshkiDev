@@ -13,11 +13,11 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(window.innerWidth > 600); 
   
-  useEffect(() => {
+   useEffect(() => {
     if (!guessedLocation && isExpanded) {
       setIsExpanded(false);
     }
-  }, [guessedLocation, isExpanded]);
+  }, [guessedLocation]);
 
   useEffect(() => {
     if (window.google && window.google.maps && isVisible) {
