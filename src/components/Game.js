@@ -15,9 +15,10 @@ const REGION_BOUNDS = {
 };
 const SEARCH_RADIUS = 30000; // до 30 км вокруг случайной точки
 const MAX_ATTEMPTS_PER_ROUND = 30;
+const MAX_GENERATION_ATTEMPTS = TOTAL_ROUNDS * 5;
 const HELP_RADIUS_KM = 100;
 
-function Game({ onReset, mode = 'classic' }) {
+function Game({ onReset, language = 'ru' }) {
   const [currentRound, setCurrentRound] = useState(1);
   const [roundLocations, setRoundLocations] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -28,9 +29,6 @@ function Game({ onReset, mode = 'classic' }) {
   const [distance, setDistance] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [roundResults, setRoundResults] = useState([]);
-  const [cityCenters, setCityCenters] = useState({});
-  const [availableCities, setAvailableCities] = useState([]);
-  const [selectedCity, setSelectedCity] = useState('');
   const [loadingRounds, setLoadingRounds] = useState(true);
   const [roundsError, setRoundsError] = useState('');
   const [helpActive, setHelpActive] = useState(false);
@@ -102,10 +100,15 @@ function Game({ onReset, mode = 'classic' }) {
     setRoundsError('');
 
     const generated = [];
-    for (let i = 0; i < TOTAL_ROUNDS; i++) {
+    let attempts = 0;
+
+    while (generated.length < TOTAL_ROUNDS && attempts < MAX_GENERATION_ATTEMPTS) {
       const panorama = await findPanoramaInYakutia();
-      if (!panorama) break;
-      generated.push(mapPanoramaToLocation(panorama, i));
+      attempts += 1;
+      if (!panorama) {
+        continue;
+      }
+      generated.push(mapPanoramaToLocation(panorama, generated.length));
     }
 
     if (generated.length > 0) {
@@ -118,29 +121,9 @@ function Game({ onReset, mode = 'classic' }) {
       setTotalScore(0);
       setRoundResults([]);
       setDistance(0);
-      setSelectedCity('');
       setGameFinished(false);
       setHelpActive(false);
       setHelpCenter(generated[0] ? getHelpCenter(generated[0]) : null);
-
-      // Центры городов для упрощенного режима
-      const cityMap = {};
-      generated.forEach((p) => {
-        if (!p.city) return;
-        if (!cityMap[p.city]) {
-          cityMap[p.city] = { lat: p.lat, lng: p.lng, count: 1 };
-        } else {
-          cityMap[p.city].lat += p.lat;
-          cityMap[p.city].lng += p.lng;
-          cityMap[p.city].count += 1;
-        }
-      });
-      Object.keys(cityMap).forEach((city) => {
-        cityMap[city].lat /= cityMap[city].count;
-        cityMap[city].lng /= cityMap[city].count;
-      });
-      setCityCenters(cityMap);
-      setAvailableCities(Object.keys(cityMap).sort());
     } else {
       setRoundsError('Не удалось найти панорамы в Якутии. Попробуйте еще раз.');
     }
@@ -215,12 +198,6 @@ function Game({ onReset, mode = 'classic' }) {
     setShowResult(true);
   };
 
-  const handleCityGuess = () => {
-    if (!currentLocation || !selectedCity || !cityCenters[selectedCity]) return;
-    const center = cityCenters[selectedCity];
-    handleGuess(center.lat, center.lng);
-  };
-
   const nextRound = () => {
     if (currentRound >= totalRounds) {
       setGameFinished(true);
@@ -237,15 +214,20 @@ function Game({ onReset, mode = 'classic' }) {
       setShowResult(false);
       setRoundScore(0);
       setDistance(0);
-      setSelectedCity('');
       setHelpActive(false);
       setHelpCenter(getHelpCenter(nextLocation));
       playSound('next');
     }
   };
 
+  const isYakut = language === 'sah';
+
   if (loadingRounds) {
-    return <div className="loading">Ищем случайные панорамы Якутии...</div>;
+    return (
+      <div className="loading">
+        {isYakut ? 'Саха Сирин панорамаларын көстүүбүт...' : 'Ищем случайные панорамы Якутии...'}
+      </div>
+    );
   }
 
   if (roundsError) {
@@ -253,8 +235,16 @@ function Game({ onReset, mode = 'classic' }) {
       <div className="loading">
         {roundsError}
         <div style={{ marginTop: '12px' }}>
-          <button className="next-button" onClick={initRounds}>Попробовать снова</button>
-          <button className="next-button" onClick={onReset} style={{ marginLeft: '8px' }}>Назад</button>
+          <button className="next-button" onClick={initRounds}>
+            {isYakut ? 'Хатылаа' : 'Попробовать снова'}
+          </button>
+          <button
+            className="next-button"
+            onClick={onReset}
+            style={{ marginLeft: '8px' }}
+          >
+            {isYakut ? 'Төнүн' : 'Назад'}
+          </button>
         </div>
       </div>
     );
@@ -266,22 +256,27 @@ function Game({ onReset, mode = 'classic' }) {
         totalScore={totalScore}
         roundResults={roundResults}
         onPlayAgain={onReset}
+        language={language}
       />
     );
   }
 
   if (!currentLocation) {
-    return <div className="loading">Загрузка...</div>;
+    return (
+      <div className="loading">
+        {isYakut ? 'Туруорууммыт...' : 'Загрузка...'}
+      </div>
+    );
   }
 
   return (
     <div className="game">
       <div className="game-header">
         <div className="round-info">
-          Раунд {currentRound} / {totalRounds}
+          {isYakut ? 'Раунд' : 'Раунд'} {currentRound} / {totalRounds}
         </div>
         <div className="score-info">
-          Очки: {totalScore.toLocaleString()}
+          {isYakut ? 'Балл: ' : 'Очки: '}{totalScore.toLocaleString()}
         </div>
       </div>
 
@@ -298,51 +293,27 @@ function Game({ onReset, mode = 'classic' }) {
             }}
             disabled={helpActive}
           >
-            {helpActive ? 'Радиус подсказки включен' : 'Помощь (радиус)'}
+            {helpActive
+              ? (isYakut ? 'Көмө түбэһин көрдөрүллүбэтэ' : 'Радиус подсказки включен')
+              : (isYakut ? 'Көмө түбэһинэн' : 'Помощь (радиус)')}
           </button>
         </div>
       )}
 
-      <StreetView 
+      <StreetView
         location={currentLocation}
       />
 
-      {mode === 'classic' && (
-        <GuessMap 
-          onGuess={handleGuess}
-          disabled={showResult}
-          actualLocation={currentLocation}
-          guessedLocation={guessedLocation}
-          helpActive={helpActive}
-          helpRadiusKm={HELP_RADIUS_KM}
-          helpCenter={helpCenter}
-        />
-      )}
-
-      {mode === 'simple' && !showResult && (
-        <div className="simple-guess-panel">
-          <div className="simple-guess-label">Выбери населённый пункт</div>
-          <select
-            className="simple-guess-select"
-            value={selectedCity}
-            onChange={(e) => setSelectedCity(e.target.value)}
-          >
-            <option value="">— Город или село —</option>
-            {availableCities.map((city) => (
-              <option key={city} value={city}>
-                {city}
-              </option>
-            ))}
-          </select>
-          <button
-            className="simple-guess-button"
-            onClick={handleCityGuess}
-            disabled={!selectedCity}
-          >
-            Угадать
-          </button>
-        </div>
-      )}
+      <GuessMap 
+        onGuess={handleGuess}
+        disabled={showResult}
+        actualLocation={currentLocation}
+        guessedLocation={guessedLocation}
+        helpActive={helpActive}
+        helpRadiusKm={HELP_RADIUS_KM}
+        helpCenter={helpCenter}
+        language={language}
+      />
 
       {showResult && (
         <ResultModal
@@ -353,6 +324,7 @@ function Game({ onReset, mode = 'classic' }) {
           onNext={nextRound}
           location={currentLocation}
           guessedLocation={guessedLocation}
+          language={language}
         />
       )}
     </div>

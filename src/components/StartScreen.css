@@ -17,6 +17,33 @@
   animation: fadeIn 0.5s ease-in;
 }
 
+.start-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.lang-toggle {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(102, 126, 234, 0.08);
+  color: #4a4a6a;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.lang-toggle:hover {
+  background: rgba(102, 126, 234, 0.18);
+  transform: translateY(-1px);
+}
+
+.lang-toggle:active {
+  transform: translateY(0);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

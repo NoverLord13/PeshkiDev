@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './GuessMap.css';
 
-function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActive = false, helpRadiusKm = 100, helpCenter }) {
+function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActive = false, helpRadiusKm = 100, helpCenter, language = 'ru' }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
@@ -165,6 +165,8 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
     mapInstanceRef.current.fitBounds(bounds);
   };
 
+  const isYakut = language === 'sah';
+
   const handleGuess = () => {
     if (!markerRef.current || disabled) return;
     const pos = markerRef.current.getPosition();
@@ -173,50 +175,49 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
 
   return (
     <>
-{/* Кнопка открытия карты на мобильных */}
-{!isVisible && (
-  <button className="open-map-btn" onClick={() => setIsVisible(true)}>
-    Открыть карту
-  </button>
-)}
+      {/* Кнопка открытия карты на мобильных */}
+      {!isVisible && (
+        <button className="open-map-btn" onClick={() => setIsVisible(true)}>
+          {isYakut ? 'Картаны ас' : 'Открыть карту'}
+        </button>
+      )}
 
-{isVisible && (
-  <div className={`guess-map-container ${isExpanded ? 'expanded' : ''}`}>
+      {isVisible && (
+        <div className={`guess-map-container ${isExpanded ? 'expanded' : ''}`}>
 
-    {/* Кнопка свернуть (только мобильная) */}
-    <button 
-      className="close-map-btn"
-      onClick={() => {
-        setIsExpanded(false)
-        setIsVisible(false)
-      }}
-    >
-      ✕
-    </button>
+          {/* Кнопка свернуть (только мобильная) */}
+          <button 
+            className="close-map-btn"
+            onClick={() => {
+              setIsExpanded(false);
+              setIsVisible(false);
+            }}
+          >
+            ✕
+          </button>
 
-    <div className="map-header">
-      <button 
-        className="expand-button"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        {isExpanded ? '−' : '+'}
-      </button>
-    </div>
+          <div className="map-header">
+            <button 
+              className="expand-button"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? '−' : '+'}
+            </button>
+          </div>
 
-    <div ref={mapRef} className="guess-map"></div>
+          <div ref={mapRef} className="guess-map"></div>
 
-    {!disabled && isExpanded && (
-      <button 
-        className="guess-button"
-        onClick={handleGuess}
-        disabled={!markerRef.current}
-      >
-        Угадать
-      </button>
-    )}
-  </div>
-)}
-
+          {!disabled && isExpanded && (
+            <button 
+              className="guess-button"
+              onClick={handleGuess}
+              disabled={!markerRef.current}
+            >
+              {isYakut ? 'Билиир' : 'Угадать'}
+            </button>
+          )}
+        </div>
+      )}
     </>
   );
 }

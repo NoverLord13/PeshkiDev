@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import Game from './components/Game';
 import StartScreen from './components/StartScreen';
-import ModeSelect from './components/ModeSelect';
 
 function App() {
   const [apiKey, setApiKey] = useState('');
   const [mapsLoaded, setMapsLoaded] = useState(false);
-  const [screen, setScreen] = useState('start'); // start | mode | game
-  const [gameMode, setGameMode] = useState('classic'); // classic | simple
+  const [screen, setScreen] = useState('start'); // start | game
+  const [language, setLanguage] = useState('ru'); // ru | sah
 
   useEffect(() => {
     // Загружаем API ключ
@@ -42,17 +41,15 @@ function App() {
   };
 
   const handleStart = () => {
-    setScreen('mode');
+    setScreen('game');
   };
 
-  const handleSelectMode = (mode) => {
-    setGameMode(mode);
-    setScreen('game');
+  const toggleLanguage = () => {
+    setLanguage((prev) => (prev === 'ru' ? 'sah' : 'ru'));
   };
 
   const resetGame = () => {
     setScreen('start');
-    setGameMode('classic');
   };
 
   if (!apiKey || !mapsLoaded) {
@@ -61,17 +58,17 @@ function App() {
 
   return (
     <div className="App">
-      {screen === 'start' && <StartScreen onStart={handleStart} />}
-      {screen === 'mode' && (
-        <ModeSelect
-          onSelectMode={handleSelectMode}
-          onBack={() => setScreen('start')}
+      {screen === 'start' && (
+        <StartScreen
+          onStart={handleStart}
+          language={language}
+          onToggleLanguage={toggleLanguage}
         />
       )}
       {screen === 'game' && (
         <Game
           onReset={resetGame}
-          mode={gameMode}
+          language={language}
         />
       )}
     </div>
