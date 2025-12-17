@@ -12,7 +12,12 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(window.innerWidth > 600); 
-  // На мобилке карта скрыта, на ПК видна сразу
+  
+  useEffect(() => {
+    if (!guessedLocation && isExpanded) {
+      setIsExpanded(false);
+    }
+  }, [guessedLocation, isExpanded]);
 
   useEffect(() => {
     if (window.google && window.google.maps && isVisible) {
@@ -207,6 +212,25 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
 
           <div ref={mapRef} className="guess-map"></div>
 
+          {/* Кнопка Угадать теперь отображается всегда, когда карта не развернута */}
+          {!disabled && !isExpanded && (
+            <button 
+              className="guess-button"
+              onClick={handleGuess}
+              disabled={!markerRef.current}
+              style={{
+                position: 'absolute',
+                bottom: '20px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 12
+              }}
+            >
+              {isYakut ? 'Билиир' : 'Угадать'}
+            </button>
+          )}
+
+          {/* Кнопка Угадать для развернутого режима */}
           {!disabled && isExpanded && (
             <button 
               className="guess-button"

@@ -69,11 +69,6 @@
 
 /* Кнопка */
 .guess-button {
-  position: absolute;
-  bottom: calc(20px + env(safe-area-inset-bottom)); /* 🔥 iPhone safe area */
-  left: 50%;
-  transform: translateX(-50%);
-
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
@@ -82,14 +77,12 @@
   font-weight: bold;
   border-radius: 50px;
   cursor: pointer;
-
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   transition: transform 0.2s;
-  z-index: 12;
 }
 
 .guess-button:hover:not(:disabled) {
-  transform: translateX(-50%) translateY(-2px);
+  transform: translateY(-2px);
 }
 
 .guess-button:disabled {
