@@ -12,11 +12,32 @@ function App() {
   const [gameMode, setGameMode] = useState('classic'); // classic | simple
 
   useEffect(() => {
+  console.log(JSON.stringify({
+    timestamp: new Date().toISOString(),
+    level: 'INFO',
+    component: 'App',
+    message: 'Начинается инициализация приложения.',
+  }));
+
   const key = process.env.REACT_APP_GMAPS_API_KEY;
+  
   if (!key) {
-    console.error('API ключ не найден в переменных окружения');
+    console.error(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level: 'ERROR',
+      component: 'App',
+      message: 'API ключ Google Maps не найден в переменных окружения.',
+      details: 'REACT_APP_GMAPS_API_KEY is undefined.'
+    }));
     return;
   }
+  console.log(JSON.stringify({
+    timestamp: new Date().toISOString(),
+    level: 'INFO',
+    component: 'App',
+    message: 'API ключ успешно получен из переменных окружения.',
+  }));
+
   setApiKey(key);
   loadGoogleMapsAPI(key);
 }, []);
