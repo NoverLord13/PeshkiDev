@@ -18,7 +18,8 @@
 npm install
 ```
 
-2. Добавьте ваш API ключ Google Maps в файл `public/tocenJS.txt` 
+2. **ВАЖНО:** Добавьте ваш API ключ Google Maps в файл `public/tocenJS.txt` 
+   (замените текст YOUR_GOOGLE_MAPS_API_KEY_HERE на ваш ключ)
 
 3. Запустите приложение:
 ```bash
@@ -27,9 +28,15 @@ npm start
 
 Приложение откроется на http://localhost:3000
 
+## Сборка для продакшена
+
+```bash
+npm run build
+```
+
 ## Технологии
 
 - React 18
 - Google Maps API (Street View & Maps)
-- CSS3
+- CSS3 с градиентами и анимациями
 

@@ -2,22 +2,24 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import Game from './components/Game';
 import StartScreen from './components/StartScreen';
+import ModeSelect from './components/ModeSelect';
+import places from './data/places.json';
 
 function App() {
   const [apiKey, setApiKey] = useState('');
   const [mapsLoaded, setMapsLoaded] = useState(false);
-  const [screen, setScreen] = useState('start'); // start | game
+  const [screen, setScreen] = useState('start'); // start | mode | game
   const [language, setLanguage] = useState('ru'); // ru | sah
 
   useEffect(() => {
-    const key = process.env.REACT_APP_GMAPS_API_KEY;
-    if (!key) {
-      console.error('API ключ не найден в переменных окружения');
-      return;
-    }
-    setApiKey(key);
-    loadGoogleMapsAPI(key);
-  }, []);
+  const key = process.env.REACT_APP_GMAPS_API_KEY;
+  if (!key) {
+    console.error('API ключ не найден в переменных окружения');
+    return;
+  }
+  setApiKey(key);
+  loadGoogleMapsAPI(key);
+}, []);
 
   const loadGoogleMapsAPI = (key) => {
     if (window.google) {
@@ -39,7 +41,7 @@ function App() {
   };
 
   const handleStart = () => {
-    setScreen('game');
+    setScreen('mode');
   };
 
   const toggleLanguage = () => {
