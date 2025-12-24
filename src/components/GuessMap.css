@@ -13,8 +13,17 @@
   transition: all 0.3s ease;
   z-index: 10;
 
-  max-width: calc(100vw - 30px);  /* 🔥 Не вылезает за экран */
-  max-height: calc(60vh);         /* 🔥 На мобилке не перекрывает UI */
+  max-width: calc(100vw - 30px);
+  max-height: calc(60vh);
+  
+  /* Убираем position: relative, добавляем внутренний контейнер */
+}
+
+/* Добавьте этот класс для внутреннего контейнера */
+.guess-map-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .guess-map-container.expanded {
@@ -61,156 +70,13 @@
 /* Сместить зум/компас Google Maps чуть выше середины */
 .guess-map .gm-bundled-control-on-bottom,
 .guess-map .gm-bundled-control {
-  top: 45% !important;
+  top: 30% !important; /* Поднимаем еще выше */
   bottom: auto !important;
   right: 8px !important;
   transform: translateY(-50%);
 }
 
 /* Кнопка для маленькой карты */
-.guess-button.small-map-btn {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 12px 32px;
-  font-size: 16px;
-  font-weight: bold;
-  border-radius: 50px;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  transition: transform 0.2s;
-  z-index: 12;
-}
-
-/* Кнопка для развернутой карты */
-.guess-button.expanded-btn {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 12px 32px;
-  font-size: 16px;
-  font-weight: bold;
-  border-radius: 50px;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  transition: transform 0.2s;
-  z-index: 12;
-}
-
-.guess-button:hover:not(:disabled) {
-  transform: translateX(-50%) translateY(-2px);
-}
-
-.guess-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 📱 Адаптация под мобильные */
-@media (max-width: 480px) {
-  .guess-map-container {
-    right: 10px;
-    bottom: 15px;
-
-    width: 80vw;
-    height: 35vh;
-    border-radius: 12px;
-  }
-
-  .guess-map-container.expanded {
-    width: 95vw;
-    height: 88vh;
-  }
-
-  .expand-button {
-    width: 34px;
-    height: 34px;
-    font-size: 20px;
-  }
-
-  .guess-button {
-    padding: 10px 26px;
-    font-size: 15px;
-  }
-}
-.open-map-btn {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-
-  padding: 12px 20px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border: none;
-  border-radius: 50px;
-  font-size: 16px;
-  font-weight: 600;
-  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
-  z-index: 20;
-
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.open-map-btn:hover {
-  transform: translateY(-2px);
-}
-
-/* Прячем кнопку на ПК */
-@media (min-width: 600px) {
-  .open-map-btn {
-    display: none;
-  }
-}
-/* Кнопка СВЕРНУТЬ карту */
-.close-map-btn {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-
-  width: 38px;
-  height: 38px;
-
-  background: rgba(0,0,0,0.55);
-  color: white;
-
-  border: none;
-  border-radius: 50%;
-  font-size: 20px;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  box-shadow: 0 3px 12px rgba(0,0,0,0.3);
-  z-index: 30;
-
-  cursor: pointer;
-  transition: 0.15s ease;
-}
-
-/* Эффект наведения */
-.close-map-btn:hover {
-  background: rgba(0,0,0,0.7);
-  transform: scale(1.05);
-}
-
-/* На ПК кнопка не нужна */
-@media (min-width: 600px) {
-  .close-map-btn {
-    display: none;
-  }
-}
-
-/* Кнопка для миникарты */
 .guess-button.small-map-btn {
   position: absolute;
   bottom: 15px;
@@ -260,21 +126,70 @@
   transform: translateX(-50%);
 }
 
-/* Убедитесь, что контейнеры карты имеют относительное позиционирование */
-.guess-map-container {
-  position: relative; /* Это важно для абсолютного позиционирования кнопки внутри */
+.open-map-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+  z-index: 20;
+
+  cursor: pointer;
+  transition: transform 0.15s ease;
 }
 
-/* Сместим встроенные элементы управления Google Maps выше */
-.guess-map .gm-bundled-control-on-bottom,
-.guess-map .gm-bundled-control {
-  top: 30% !important; /* Поднимем выше, чтобы не мешали кнопке */
-  bottom: auto !important;
-  right: 8px !important;
-  transform: translateY(-50%);
+.open-map-btn:hover {
+  transform: translateY(-2px);
 }
 
-/* На мобильных уберем дублирующую кнопку свертывания на ПК */
+/* Прячем кнопку на ПК */
+@media (min-width: 600px) {
+  .open-map-btn {
+    display: none;
+  }
+}
+
+/* Кнопка СВЕРНУТЬ карту */
+.close-map-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+
+  width: 38px;
+  height: 38px;
+
+  background: rgba(0,0,0,0.55);
+  color: white;
+
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  box-shadow: 0 3px 12px rgba(0,0,0,0.3);
+  z-index: 30;
+
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+/* Эффект наведения */
+.close-map-btn:hover {
+  background: rgba(0,0,0,0.7);
+  transform: scale(1.05);
+}
+
+/* На ПК кнопка не нужна */
 @media (min-width: 600px) {
   .close-map-btn {
     display: none;
@@ -283,6 +198,35 @@
   /* На ПК увеличим немного кнопку на миникарте */
   .guess-button.small-map-btn {
     padding: 12px 28px;
+    font-size: 15px;
+  }
+}
+
+/* 📱 Адаптация под мобильные */
+@media (max-width: 480px) {
+  .guess-map-container {
+    right: 10px;
+    bottom: 15px;
+
+    width: 80vw;
+    height: 35vh;
+    border-radius: 12px;
+  }
+
+  .guess-map-container.expanded {
+    width: 95vw;
+    height: 88vh;
+  }
+
+  .expand-button {
+    width: 34px;
+    height: 34px;
+    font-size: 20px;
+  }
+
+  .guess-button.small-map-btn,
+  .guess-button.expanded-btn {
+    padding: 10px 26px;
     font-size: 15px;
   }
 }
