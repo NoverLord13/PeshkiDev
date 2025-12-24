@@ -209,3 +209,80 @@
     display: none;
   }
 }
+
+/* Кнопка для миникарты */
+.guess-button.small-map-btn {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 25px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: transform 0.2s, opacity 0.2s;
+  z-index: 1000; /* Высокий z-index чтобы быть над элементами Google Maps */
+  white-space: nowrap;
+}
+
+/* Кнопка для развернутой карты */
+.guess-button.expanded-btn {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: transform 0.2s;
+  z-index: 1000;
+}
+
+.guess-button:hover:not(:disabled) {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.guess-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: translateX(-50%);
+}
+
+/* Убедитесь, что контейнеры карты имеют относительное позиционирование */
+.guess-map-container {
+  position: relative; /* Это важно для абсолютного позиционирования кнопки внутри */
+}
+
+/* Сместим встроенные элементы управления Google Maps выше */
+.guess-map .gm-bundled-control-on-bottom,
+.guess-map .gm-bundled-control {
+  top: 30% !important; /* Поднимем выше, чтобы не мешали кнопке */
+  bottom: auto !important;
+  right: 8px !important;
+  transform: translateY(-50%);
+}
+
+/* На мобильных уберем дублирующую кнопку свертывания на ПК */
+@media (min-width: 600px) {
+  .close-map-btn {
+    display: none;
+  }
+  
+  /* На ПК увеличим немного кнопку на миникарте */
+  .guess-button.small-map-btn {
+    padding: 12px 28px;
+    font-size: 15px;
+  }
+}

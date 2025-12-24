@@ -192,18 +192,19 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
   };
 
   return (
-    <>
-      {/* Кнопка открытия карты на мобильных */}
-      {!isVisible && (
-        <button className="open-map-btn" onClick={() => setIsVisible(true)}>
-          {isYakut ? 'Картаны ас' : 'Открыть карту'}
-        </button>
-      )}
+  <>
+    {/* Кнопка открытия карты на мобильных */}
+    {!isVisible && (
+      <button className="open-map-btn" onClick={() => setIsVisible(true)}>
+        {isYakut ? 'Картаны ас' : 'Открыть карту'}
+      </button>
+    )}
 
-      {isVisible && (
-        <div className={`guess-map-container ${isExpanded ? 'expanded' : ''}`}>
+    {isVisible && (
+      <div className={`guess-map-container ${isExpanded ? 'expanded' : ''}`}>
 
-          {/* Кнопка свернуть (только мобильная) */}
+        {/* Кнопка свернуть (только мобильная) */}
+        {window.innerWidth <= 600 && (
           <button 
             className="close-map-btn"
             onClick={() => {
@@ -213,31 +214,44 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
           >
             ✕
           </button>
+        )}
 
-          <div className="map-header">
-            <button 
-              className="expand-button"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? '−' : '+'}
-            </button>
-          </div>
-
-          <div ref={mapRef} className="guess-map"></div>
-
-          {!disabled && isExpanded && (
-            <button 
-              className="guess-button"
-              onClick={handleGuess}
-              disabled={!hasMarker}
-            >
-              {isYakut ? 'Билиир' : 'Угадать'}
-            </button>
-          )}
+        <div className="map-header">
+          <button 
+            className="expand-button"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? '−' : '+'}
+          </button>
         </div>
-      )}
-    </>
-  );
+
+        <div ref={mapRef} className="guess-map"></div>
+
+        {/* Кнопка "Угадать" для миникарты (не развернутой) */}
+        {!disabled && !isExpanded && (
+          <button 
+            className="guess-button small-map-btn"
+            onClick={handleGuess}
+            disabled={!hasMarker}
+          >
+            {isYakut ? 'Билиир' : 'Угадать'}
+          </button>
+        )}
+
+        {/* Кнопка "Угадать" для развернутой карты */}
+        {!disabled && isExpanded && (
+          <button 
+            className="guess-button expanded-btn"
+            onClick={handleGuess}
+            disabled={!hasMarker}
+          >
+            {isYakut ? 'Билиир' : 'Угадать'}
+          </button>
+        )}
+      </div>
+    )}
+  </>
+);
 }
 
 export default GuessMap;

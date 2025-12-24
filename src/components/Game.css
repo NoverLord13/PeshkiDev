@@ -53,6 +53,7 @@
   padding: 15px 25px;
   border-radius: 50px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  max-width: 90%;
 }
 
 .hint-button {
@@ -156,7 +157,18 @@
 }
 
 /* 📱 Мобильная адаптация */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+  .hints-panel {
+    top: 80px;
+    padding: 10px 18px;
+    font-size: 14px;
+  }
+  
+  .hint-button {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  
   .simple-guess-panel {
     bottom: 15px;
     padding: 10px 12px;

@@ -13,7 +13,7 @@ const REGION_BOUNDS = {
   west: 105,
   east: 151,
 };
-const SEARCH_RADIUS = 2000; // до 10 км вокруг города для поиска панорамы
+const SEARCH_RADIUS = 10000; // до 10 км вокруг города для поиска панорамы
 const CITY_RADIUS_KM = 2; // радиус вокруг города для случайного выбора точки
 const MAX_ATTEMPTS_PER_ROUND = 10; // максимум попыток на один раунд
 const MAX_GENERATION_ATTEMPTS = TOTAL_ROUNDS * 3; // общее количество попыток генерации
