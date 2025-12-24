@@ -12,6 +12,7 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(window.innerWidth > 600); 
+  const [hasMarker, setHasMarker] = useState(false); // Отслеживаем наличие маркера для активации кнопки
   // На мобилке карта скрыта, на ПК видна сразу
 
   useEffect(() => {
@@ -44,6 +45,17 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
       if (lineRef.current) {
         lineRef.current.setMap(null);
         lineRef.current = null;
+      }
+      // Сбрасываем маркер и состояние при новом раунде
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+        markerRef.current = null;
+        setHasMarker(false);
+      }
+      // Сбрасываем карту на центр Якутии
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.setCenter({ lat: 62.5, lng: 127 });
+        mapInstanceRef.current.setZoom(5);
       }
     }
   }, [actualLocation, guessedLocation]);
@@ -96,6 +108,9 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
         fullscreenControl: false,
       });
 
+      // Сбрасываем состояние маркера при инициализации
+      setHasMarker(false);
+
       if (!disabled) {
         clickListenerRef.current = mapInstanceRef.current.addListener('click', (e) => {
           handleMapClick(e.latLng);
@@ -126,6 +141,9 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
         strokeWeight: 3,
       },
     });
+    
+    // Обновляем состояние для активации кнопки
+    setHasMarker(true);
   };
 
   const showResults = () => {
@@ -211,7 +229,7 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
             <button 
               className="guess-button"
               onClick={handleGuess}
-              disabled={!markerRef.current}
+              disabled={!hasMarker}
             >
               {isYakut ? 'Билиир' : 'Угадать'}
             </button>
