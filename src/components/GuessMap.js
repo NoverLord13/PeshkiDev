@@ -9,15 +9,11 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
   const lineRef = useRef(null);
   const helpCircleRef = useRef(null);
   const clickListenerRef = useRef(null);
-  const [hasMarker, setHasMarker] = useState(false); // Новое состояние для отслеживания маркера
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(window.innerWidth > 600); 
-  
-   useEffect(() => {
-    if (!guessedLocation && isExpanded) {
-      setIsExpanded(false);
-    }
-  }, [guessedLocation]);
+  const [hasMarker, setHasMarker] = useState(false); // Отслеживаем наличие маркера для активации кнопки
+  // На мобилке карта скрыта, на ПК видна сразу
 
   useEffect(() => {
     if (window.google && window.google.maps && isVisible) {
@@ -50,12 +46,17 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
         lineRef.current.setMap(null);
         lineRef.current = null;
       }
-      // Сбрасываем состояние маркера при новом раунде
+      // Сбрасываем маркер и состояние при новом раунде
       if (markerRef.current) {
         markerRef.current.setMap(null);
         markerRef.current = null;
+        setHasMarker(false);
       }
-      setHasMarker(false);
+      // Сбрасываем карту на центр Якутии
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.setCenter({ lat: 62.5, lng: 127 });
+        mapInstanceRef.current.setZoom(5);
+      }
     }
   }, [actualLocation, guessedLocation]);
 
@@ -107,6 +108,9 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
         fullscreenControl: false,
       });
 
+      // Сбрасываем состояние маркера при инициализации
+      setHasMarker(false);
+
       if (!disabled) {
         clickListenerRef.current = mapInstanceRef.current.addListener('click', (e) => {
           handleMapClick(e.latLng);
@@ -138,7 +142,7 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
       },
     });
     
-    // Устанавливаем состояние, что маркер создан
+    // Обновляем состояние для активации кнопки
     setHasMarker(true);
   };
 
@@ -187,10 +191,6 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
     onGuess(pos.lat(), pos.lng());
   };
 
-  const handleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
-
   return (
     <>
       {/* Кнопка открытия карты на мобильных */}
@@ -217,7 +217,7 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
           <div className="map-header">
             <button 
               className="expand-button"
-              onClick={handleExpand}
+              onClick={() => setIsExpanded(!isExpanded)}
             >
               {isExpanded ? '−' : '+'}
             </button>
@@ -225,21 +225,9 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
 
           <div ref={mapRef} className="guess-map"></div>
 
-          {/* Кнопка Угадать теперь отображается всегда, когда карта не развернута */}
-          {!disabled && !isExpanded && (
-            <button 
-              className="guess-button small-map-btn"
-              onClick={handleGuess}
-              disabled={!hasMarker}
-            >
-              {isYakut ? 'Билиир' : 'Угадать'}
-            </button>
-          )}
-
-          {/* Кнопка Угадать для развернутого режима */}
           {!disabled && isExpanded && (
             <button 
-              className="guess-button expanded-btn"
+              className="guess-button"
               onClick={handleGuess}
               disabled={!hasMarker}
             >
