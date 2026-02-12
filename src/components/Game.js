@@ -18,6 +18,7 @@ const CITY_RADIUS_KM = 2; // радиус вокруг города для сл�
 const MAX_ATTEMPTS_PER_ROUND = 10; // максимум попыток на один раунд
 const MAX_GENERATION_ATTEMPTS = TOTAL_ROUNDS * 3; // общее количество попыток генерации
 const HELP_RADIUS_KM = 100;
+const ROUND_TIME_SECONDS = 120; // 2 минуты на раунд
 
 // Список городов и населенных пунктов Якутии с примерными координатами
 const YAKUTIA_CITIES = [
@@ -112,6 +113,8 @@ function Game({ onReset, language = 'ru' }) {
   const [roundsError, setRoundsError] = useState('');
   const [helpActive, setHelpActive] = useState(false);
   const [helpCenter, setHelpCenter] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(ROUND_TIME_SECONDS);
+  const [isMapVisible, setIsMapVisible] = useState(true);
   const streetViewServiceRef = useRef(null);
 
   const totalRounds = roundLocations.length || TOTAL_ROUNDS;
@@ -308,6 +311,34 @@ function Game({ onReset, language = 'ru' }) {
     return 0;
   };
 
+  const handleTimeUp = () => {
+    if (!currentLocation || showResult) return;
+
+    // Время вышло — 0 баллов, показываем локацию
+    const lat = currentLocation.lat;
+    const lng = currentLocation.lng;
+
+    setGuessedLocation({ lat, lng });
+    const dist = 0;
+    const finalScore = 0;
+
+    setDistance(dist);
+    setRoundScore(finalScore);
+    setTotalScore(prev => prev + finalScore);
+
+    setRoundResults(prev => [...prev, {
+      round: currentRound,
+      distance: dist,
+      score: finalScore,
+      actual: { lat: currentLocation.lat, lng: currentLocation.lng },
+      guessed: { lat, lng },
+      location: currentLocation,
+      timedOut: true,
+    }]);
+
+    setShowResult(true);
+  };
+
   const handleGuess = (lat, lng) => {
     if (!currentLocation) return;
     playSound('guess');
@@ -336,6 +367,36 @@ function Game({ onReset, language = 'ru' }) {
     }]);
     
     setShowResult(true);
+  };
+
+  // Сбрасываем таймер при переходе на новый раунд / новую локацию
+  useEffect(() => {
+    if (!currentLocation || gameFinished) return;
+    setTimeLeft(ROUND_TIME_SECONDS);
+  }, [currentRound, currentLocation, gameFinished]);
+
+  // Запускаем обратный отсчёт
+  useEffect(() => {
+    if (showResult || gameFinished || !currentLocation) return;
+
+    const intervalId = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(intervalId);
+          handleTimeUp();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [showResult, gameFinished, currentLocation]);
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   const nextRound = () => {
@@ -418,9 +479,12 @@ function Game({ onReset, language = 'ru' }) {
         <div className="score-info">
           {isYakut ? 'Балл: ' : 'Очки: '}{totalScore.toLocaleString()}
         </div>
+        <div className={`timer-info ${timeLeft <= 30 ? 'low' : ''}`}>
+          {formatTime(timeLeft)}
+        </div>
       </div>
 
-      {!showResult && (
+      {!showResult && isMapVisible && (
         <div className="hints-panel">
           <button
             className={`hint-button ${helpActive ? 'used' : ''}`}
@@ -446,13 +510,14 @@ function Game({ onReset, language = 'ru' }) {
 
       <GuessMap 
         onGuess={handleGuess}
-        disabled={showResult}
+        disabled={showResult || timeLeft <= 0}
         actualLocation={currentLocation}
         guessedLocation={guessedLocation}
         helpActive={helpActive}
         helpRadiusKm={HELP_RADIUS_KM}
         helpCenter={helpCenter}
         language={language}
+        onVisibilityChange={setIsMapVisible}
       />
 
       {showResult && (

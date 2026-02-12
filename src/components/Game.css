@@ -12,7 +12,7 @@
   transform: translateX(-50%);
   z-index: 10;
   display: flex;
-  gap: 20px;
+  gap: 16px;
   align-items: center;
 }
 
@@ -29,6 +29,38 @@
 .score-info {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+}
+
+.timer-info {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #1565C0;
+  box-shadow: 0 4px 15px rgba(21, 101, 192, 0.3);
+  letter-spacing: 1px;
+  min-width: 82px;
+  text-align: center;
+}
+
+.timer-info.low {
+  background: #ffebee;
+  color: #c62828;
+  box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.4), 0 6px 18px rgba(229, 57, 53, 0.4);
+  animation: timer-pulse 1s infinite;
+}
+
+@keyframes timer-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .loading {

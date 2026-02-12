@@ -15,12 +15,11 @@ function StreetView({ location }) {
     if (panoramaRef.current && location) {
       panoramaRef.current.setPosition({
         lat: location.lat,
-        lng: location.lng
+        lng: location.lng,
       });
-      // Случайный угол обзора
       panoramaRef.current.setPov({
         heading: Math.random() * 360,
-        pitch: 0
+        pitch: 0,
       });
     } else if (!panoramaRef.current && location && window.google && window.google.maps) {
       initStreetView();
@@ -33,9 +32,9 @@ function StreetView({ location }) {
         streetViewRef.current,
         {
           position: { lat: location.lat, lng: location.lng },
-          pov: { 
-            heading: Math.random() * 360, 
-            pitch: 0 
+          pov: {
+            heading: Math.random() * 360,
+            pitch: 0,
           },
           zoom: 0,
           addressControl: false,

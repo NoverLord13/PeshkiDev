@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './GuessMap.css';
 
-function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActive = false, helpRadiusKm = 100, helpCenter, language = 'ru' }) {
+function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActive = false, helpRadiusKm = 100, helpCenter, language = 'ru', onVisibilityChange }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
@@ -26,6 +26,13 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
       }
     };
   }, [isVisible]);
+
+  // Сообщаем родителю об изменении видимости карты
+  useEffect(() => {
+    if (typeof onVisibilityChange === 'function') {
+      onVisibilityChange(isVisible);
+    }
+  }, [isVisible, onVisibilityChange]);
 
   useEffect(() => {
     if (mapInstanceRef.current && actualLocation && guessedLocation) {
