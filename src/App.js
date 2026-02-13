@@ -10,13 +10,15 @@ function App() {
   const [language, setLanguage] = useState('ru'); // ru | sah
 
   useEffect(() => {
-    const key = process.env.REACT_APP_GMAPS_API_KEY;
-    if (!key) {
-      console.error('API ключ не найден в переменных окружения');
-      return;
-    }
-    setApiKey(key);
-    loadGoogleMapsAPI(key);
+    // Загружаем API ключ
+    fetch('/tocenJS.txt')
+      .then(response => response.text())
+      .then(key => {
+        const trimmedKey = key.trim();
+        setApiKey(trimmedKey);
+        loadGoogleMapsAPI(trimmedKey);
+      })
+      .catch(err => console.error('Ошибка загрузки API ключа:', err));
   }, []);
 
   const loadGoogleMapsAPI = (key) => {
@@ -26,7 +28,7 @@ function App() {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&libraries=places,streetView`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`;
     script.async = true;
     script.defer = true;
     script.onload = () => {

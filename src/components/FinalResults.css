@@ -3,10 +3,11 @@
   height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   overflow-y: auto;
-  padding: 20px;
+  padding: 40px 20px 20px;
+  box-sizing: border-box;
 }
 
 .final-results-content {
@@ -153,4 +154,78 @@
 
 .play-again-button:active {
   transform: translateY(0);
+}
+
+.share-section {
+  margin-bottom: 30px;
+  padding: 18px 20px 20px;
+  background: #f3f4ff;
+  border-radius: 14px;
+  border: 1px solid rgba(102, 126, 234, 0.25);
+}
+
+.share-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #273469;
+  text-align: center;
+}
+
+.share-subtitle {
+  margin: 0 0 14px;
+  font-size: 14px;
+  color: #555;
+  text-align: center;
+}
+
+.share-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.share-button {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  background: white;
+  color: #333;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.share-button.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+}
+
+.share-button.telegram {
+  background: #29a9ea;
+  color: #fff;
+}
+
+.share-button.vk {
+  background: #0077ff;
+  color: #fff;
+}
+
+.share-button.twitter {
+  background: #000;
+  color: #fff;
+}
+
+.share-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.share-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
