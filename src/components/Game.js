@@ -98,7 +98,7 @@ const YAKUTIA_CITIES = [
   { name: 'Хани', lat: 62.466667, lng: 124.683333, type: 'village' }
 ];
 
-function Game({ onReset, language = 'ru' }) {
+function Game({ onReset, language = 'ru', theme = 'light', onToggleTheme }) {
   const [currentRound, setCurrentRound] = useState(1);
   const [roundLocations, setRoundLocations] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -426,7 +426,10 @@ function Game({ onReset, language = 'ru' }) {
   if (loadingRounds) {
     return (
       <div className="loading">
-        {isYakut ? 'Саха Сирин панорамаларын көстүүбүт...' : 'Ищем случайные панорамы Якутии...'}
+        <div className="loading-spinner" aria-hidden="true"></div>
+        <div className="loading-text">
+          {isYakut ? 'Загрузка...' : 'Загрузка...'}
+        </div>
       </div>
     );
   }
@@ -471,7 +474,7 @@ function Game({ onReset, language = 'ru' }) {
   }
 
   return (
-    <div className="game">
+    <div className={`game ${theme === 'dark' ? 'theme-dark' : 'theme-light'}`}>
       <div className="game-header">
         <div className="round-info">
           {isYakut ? 'Раунд' : 'Раунд'} {currentRound} / {totalRounds}
@@ -484,26 +487,6 @@ function Game({ onReset, language = 'ru' }) {
         </div>
       </div>
 
-      {!showResult && isMapVisible && (
-        <div className="hints-panel">
-          <button
-            className={`hint-button ${helpActive ? 'used' : ''}`}
-            onClick={() => {
-              setHelpActive(true);
-              if (!helpCenter && currentLocation) {
-                setHelpCenter(getHelpCenter(currentLocation));
-              }
-              playSound('help');
-            }}
-            disabled={helpActive}
-          >
-            {helpActive
-              ? (isYakut ? 'Көмө түбэһин көрдөрүллүбэтэ' : 'Радиус подсказки включен')
-              : (isYakut ? 'Көмө түбэһинэн' : 'Помощь (радиус)')}
-          </button>
-        </div>
-      )}
-
       <StreetView
         location={currentLocation}
       />
@@ -514,6 +497,13 @@ function Game({ onReset, language = 'ru' }) {
         actualLocation={currentLocation}
         guessedLocation={guessedLocation}
         helpActive={helpActive}
+        onHelp={() => {
+          setHelpActive(true);
+          if (!helpCenter && currentLocation) {
+            setHelpCenter(getHelpCenter(currentLocation));
+          }
+          playSound('help');
+        }}
         helpRadiusKm={HELP_RADIUS_KM}
         helpCenter={helpCenter}
         language={language}

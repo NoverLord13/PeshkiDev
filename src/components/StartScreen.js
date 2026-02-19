@@ -1,7 +1,7 @@
 import React from 'react';
 import './StartScreen.css';
 
-function StartScreen({ onStart, language = 'ru', onToggleLanguage }) {
+function StartScreen({ onStart, language = 'ru' }) {
   const isYakut = language === 'sah';
 
   const title = isYakut
@@ -13,20 +13,10 @@ function StartScreen({ onStart, language = 'ru', onToggleLanguage }) {
     : 'Угадай локацию на панораме!\n5 раундов • Чем ближе угадаешь, тем больше очков';
 
   const startLabel = isYakut ? 'Ойноону саҕалаа' : 'Начать игру';
-  const langButtonLabel = isYakut ? 'Русский' : 'Саха тыла';
 
   return (
     <div className="start-screen">
       <div className="start-content">
-        <div className="start-header">
-          <button
-            className="lang-toggle"
-            type="button"
-            onClick={onToggleLanguage}
-          >
-            {langButtonLabel}
-          </button>
-        </div>
         <img 
           src="https://trafaret.papik.pro/uploads/posts/2024-09/trafaret-papik-pro-hlf1-p-trafareti-sakhalii-ouordar-1.jpg" 
           alt={isYakut ? 'Саха Сирэ' : 'Якутия'}

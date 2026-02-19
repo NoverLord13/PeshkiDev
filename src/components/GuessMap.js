@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './GuessMap.css';
 
-function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActive = false, helpRadiusKm = 100, helpCenter, language = 'ru', onVisibilityChange }) {
+function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActive = false, onHelp, helpRadiusKm = 100, helpCenter, language = 'ru', onVisibilityChange }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
@@ -10,10 +10,10 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
   const helpCircleRef = useRef(null);
   const clickListenerRef = useRef(null);
 
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isVisible, setIsVisible] = useState(window.innerWidth > 600); 
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   const [hasMarker, setHasMarker] = useState(false); // Отслеживаем наличие маркера для активации кнопки
-  // На мобилке карта скрыта, на ПК видна сразу
+  // Карта открывается по кнопке и сразу в full-screen (без миникарты)
 
   useEffect(() => {
     if (window.google && window.google.maps && isVisible) {
@@ -112,6 +112,7 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
         zoom: 5,
         mapTypeControl: false,
         streetViewControl: false,
+        zoomControl: false,
         fullscreenControl: false,
       });
 
@@ -200,9 +201,15 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
 
   return (
     <>
-      {/* Кнопка открытия карты на мобильных */}
+      {/* Кнопка открытия карты (и ПК, и мобилка) */}
       {!isVisible && (
-        <button className="open-map-btn" onClick={() => setIsVisible(true)}>
+        <button
+          className="open-map-btn"
+          onClick={() => {
+            setIsVisible(true);
+            setIsExpanded(true);
+          }}
+        >
           {isYakut ? 'Картаны ас' : 'Открыть карту'}
         </button>
       )}
@@ -210,7 +217,7 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
       {isVisible && (
         <div className={`guess-map-container ${isExpanded ? 'expanded' : ''}`}>
 
-          {/* Кнопка свернуть (только мобильная) */}
+          {/* Кнопка закрыть карту */}
           <button 
             className="close-map-btn"
             onClick={() => {
@@ -221,16 +228,18 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
             ✕
           </button>
 
-          <div className="map-header">
-            <button 
-              className="expand-button"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? '−' : '+'}
-            </button>
-          </div>
-
           <div ref={mapRef} className="guess-map"></div>
+
+          {!disabled && isExpanded && (
+            <button
+              type="button"
+              className={`help-button ${helpActive ? 'used' : ''}`}
+              onClick={onHelp}
+              disabled={helpActive}
+            >
+              {helpActive ? (isYakut ? 'Көмө түбэһин көстүбүт' : 'Подсказка включена') : (isYakut ? 'Көмө (радиус)' : 'Помощь (радиус)')}
+            </button>
+          )}
 
           {!disabled && isExpanded && (
             <button 

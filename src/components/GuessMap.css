@@ -27,6 +27,11 @@
   right: auto;
 }
 
+/* Когда карта открыта — всегда как full-screen (без "мини") */
+.guess-map-container {
+  max-height: calc(90vh);
+}
+
 .map-header {
   position: absolute;
   top: 10px;
@@ -67,6 +72,11 @@
   transform: translateY(-50%);
 }
 
+/* Убираем кнопку/контролы с классом gm-control-active */
+.guess-map .gm-control-active {
+  display: none !important;
+}
+
 /* Кнопка */
 .guess-button {
   position: absolute;
@@ -86,6 +96,41 @@
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   transition: transform 0.2s;
   z-index: 12;
+}
+
+/* Кнопка подсказки — как "Угадать", но сверху */
+.help-button {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+
+  background: linear-gradient(135deg, #FFA726 0%, #FB8C00 100%);
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255, 167, 38, 0.35);
+  transition: transform 0.2s, box-shadow 0.2s;
+  z-index: 13;
+}
+
+.help-button:hover:not(:disabled) {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 18px rgba(255, 167, 38, 0.45);
+}
+
+.help-button:disabled {
+  opacity: 0.85;
+  cursor: not-allowed;
+}
+
+.help-button.used {
+  background: linear-gradient(135deg, #66BB6A 0%, #43A047 100%);
+  box-shadow: 0 4px 14px rgba(67, 160, 71, 0.35);
 }
 
 .guess-button:hover:not(:disabled) {
@@ -123,6 +168,11 @@
     padding: 10px 26px;
     font-size: 15px;
   }
+
+  .help-button {
+    padding: 9px 18px;
+    font-size: 13px;
+  }
 }
 .open-map-btn {
   position: absolute;
@@ -147,12 +197,6 @@
   transform: translateY(-2px);
 }
 
-/* Прячем кнопку на ПК */
-@media (min-width: 600px) {
-  .open-map-btn {
-    display: none;
-  }
-}
 /* Кнопка СВЕРНУТЬ карту */
 .close-map-btn {
   position: absolute;
@@ -187,9 +231,5 @@
 }
 
 /* На ПК кнопка не нужна */
-@media (min-width: 600px) {
-  .close-map-btn {
-    display: none;
-  }
-}
+/* (оставляем видимой и на ПК) */
 
