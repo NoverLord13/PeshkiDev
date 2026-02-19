@@ -9,6 +9,8 @@ function App() {
   const [screen, setScreen] = useState('start'); // start | game
   const [language, setLanguage] = useState('ru'); // ru | sah
   const [theme, setTheme] = useState('light'); // light | dark
+  const [timerEnabled, setTimerEnabled] = useState(true);
+  const [mode, setMode] = useState('all'); // all | yakutsk
 
   useEffect(() => {
     // Загружаем API ключ
@@ -63,6 +65,8 @@ function App() {
 
   const langLabel = language === 'ru' ? 'Язык: Русский' : 'Язык: Саха';
   const themeLabel = theme === 'dark' ? 'Светлый режим' : 'Тёмный режим';
+  const timerLabel = timerEnabled ? 'Таймер: Вкл' : 'Таймер: Выкл';
+  const modeLabel = mode === 'yakutsk' ? 'Режим: Только Якутск' : 'Режим: Вся Якутия';
 
   return (
     <div className={`App theme-${theme}`}>
@@ -70,6 +74,8 @@ function App() {
         <StartScreen
           onStart={handleStart}
           language={language}
+          mode={mode}
+          onChangeMode={setMode}
         />
       )}
       {screen === 'game' && (
@@ -77,6 +83,8 @@ function App() {
           onReset={resetGame}
           language={language}
           theme={theme}
+          timerEnabled={timerEnabled}
+          mode={mode}
         />
       )}
 
@@ -100,6 +108,20 @@ function App() {
             onClick={toggleLanguage}
           >
             {langLabel}
+          </button>
+          <button
+            type="button"
+            className="settings-item"
+            onClick={() => setTimerEnabled(prev => !prev)}
+          >
+            {timerLabel}
+          </button>
+          <button
+            type="button"
+            className="settings-item"
+            onClick={() => setMode(prev => (prev === 'yakutsk' ? 'all' : 'yakutsk'))}
+          >
+            {modeLabel}
           </button>
           <a
             href="https://t.me/alpinisti4"

@@ -1,7 +1,7 @@
 import React from 'react';
 import './StartScreen.css';
 
-function StartScreen({ onStart, language = 'ru' }) {
+function StartScreen({ onStart, language = 'ru', mode = 'all', onChangeMode }) {
   const isYakut = language === 'sah';
 
   const title = isYakut
@@ -13,6 +13,8 @@ function StartScreen({ onStart, language = 'ru' }) {
     : 'Угадай локацию на панораме!\n5 раундов • Чем ближе угадаешь, тем больше очков';
 
   const startLabel = isYakut ? 'Ойноону саҕалаа' : 'Начать игру';
+  const allModeLabel = isYakut ? 'Барыта Якутия' : 'Вся Якутия';
+  const yakutskModeLabel = isYakut ? 'Только Дьокуускай' : 'Только Якутск';
 
   return (
     <div className="start-screen">
@@ -31,6 +33,22 @@ function StartScreen({ onStart, language = 'ru' }) {
             </React.Fragment>
           ))}
         </p>
+        <div className="mode-buttons">
+          <button
+            type="button"
+            className={`mode-button ${mode !== 'yakutsk' ? 'active' : ''}`}
+            onClick={() => onChangeMode && onChangeMode('all')}
+          >
+            {allModeLabel}
+          </button>
+          <button
+            type="button"
+            className={`mode-button ${mode === 'yakutsk' ? 'active' : ''}`}
+            onClick={() => onChangeMode && onChangeMode('yakutsk')}
+          >
+            {yakutskModeLabel}
+          </button>
+        </div>
         <button className="start-button" onClick={onStart}>
           {startLabel}
         </button>

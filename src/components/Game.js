@@ -6,15 +6,9 @@ import ResultModal from './ResultModal';
 import FinalResults from './FinalResults';
 
 const TOTAL_ROUNDS = 5;
-const REGION_BOUNDS = {
-  // Примерные границы Республики Саха (Якутия)
-  north: 76,
-  south: 55,
-  west: 105,
-  east: 151,
-};
-const SEARCH_RADIUS = 10000; // до 10 км вокруг города для поиска панорамы
-const CITY_RADIUS_KM = 2; // радиус вокруг города для случайного выбора точки
+
+const SEARCH_RADIUS = 17000; // до 10 км вокруг города для поиска панорамы
+const CITY_RADIUS_KM = 17; // радиус вокруг города для случайного выбора точки
 const MAX_ATTEMPTS_PER_ROUND = 10; // максимум попыток на один раунд
 const MAX_GENERATION_ATTEMPTS = TOTAL_ROUNDS * 3; // общее количество попыток генерации
 const HELP_RADIUS_KM = 100;
@@ -98,7 +92,7 @@ const YAKUTIA_CITIES = [
   { name: 'Хани', lat: 62.466667, lng: 124.683333, type: 'village' }
 ];
 
-function Game({ onReset, language = 'ru', theme = 'light', onToggleTheme }) {
+function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, mode = 'all' }) {
   const [currentRound, setCurrentRound] = useState(1);
   const [roundLocations, setRoundLocations] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -183,9 +177,15 @@ function Game({ onReset, language = 'ru', theme = 'light', onToggleTheme }) {
 
   // Ищем панораму в случайном городе из списка
   const findPanoramaInYakutia = async () => {
+    const citiesPool = mode === 'yakutsk'
+      ? YAKUTIA_CITIES.filter((c) => c.name === 'Якутск')
+      : YAKUTIA_CITIES;
+
+    const effectiveCities = citiesPool.length > 0 ? citiesPool : YAKUTIA_CITIES;
+
     for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_ROUND; attempt++) {
       // Случайно выбираем город
-      const randomCity = YAKUTIA_CITIES[Math.floor(Math.random() * YAKUTIA_CITIES.length)];
+      const randomCity = effectiveCities[Math.floor(Math.random() * effectiveCities.length)];
       
       // Генерируем случайную точку в радиусе 10 км вокруг города
       const searchPoint = getRandomPointAroundCity(randomCity, CITY_RADIUS_KM);
@@ -375,8 +375,9 @@ function Game({ onReset, language = 'ru', theme = 'light', onToggleTheme }) {
     setTimeLeft(ROUND_TIME_SECONDS);
   }, [currentRound, currentLocation, gameFinished]);
 
-  // Запускаем обратный отсчёт
+  // Запускаем обратный отсчёт (если таймер включён)
   useEffect(() => {
+    if (!timerEnabled) return;
     if (showResult || gameFinished || !currentLocation) return;
 
     const intervalId = setInterval(() => {
@@ -391,7 +392,7 @@ function Game({ onReset, language = 'ru', theme = 'light', onToggleTheme }) {
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [showResult, gameFinished, currentLocation]);
+  }, [timerEnabled, showResult, gameFinished, currentLocation]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -482,9 +483,11 @@ function Game({ onReset, language = 'ru', theme = 'light', onToggleTheme }) {
         <div className="score-info">
           {isYakut ? 'Балл: ' : 'Очки: '}{totalScore.toLocaleString()}
         </div>
-        <div className={`timer-info ${timeLeft <= 30 ? 'low' : ''}`}>
-          {formatTime(timeLeft)}
-        </div>
+        {timerEnabled && (
+          <div className={`timer-info ${timeLeft <= 30 ? 'low' : ''}`}>
+            {formatTime(timeLeft)}
+          </div>
+        )}
       </div>
 
       <StreetView
@@ -493,7 +496,7 @@ function Game({ onReset, language = 'ru', theme = 'light', onToggleTheme }) {
 
       <GuessMap 
         onGuess={handleGuess}
-        disabled={showResult || timeLeft <= 0}
+        disabled={showResult || (timerEnabled && timeLeft <= 0)}
         actualLocation={currentLocation}
         guessedLocation={guessedLocation}
         helpActive={helpActive}

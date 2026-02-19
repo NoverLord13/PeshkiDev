@@ -72,7 +72,36 @@
   font-size: 18px;
   color: #666;
   line-height: 1.6;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+}
+
+.mode-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 25px;
+}
+
+.mode-button {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(102, 126, 234, 0.08);
+  color: #4a4a6a;
+  transition: background 0.2s, color 0.2s, transform 0.1s, box-shadow 0.1s;
+}
+
+.mode-button.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(102, 126, 234, 0.4);
+}
+
+.mode-button:hover {
+  transform: translateY(-1px);
 }
 
 .start-button {
