@@ -29,7 +29,7 @@ function App() {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=$%7Bkey%7D&loading=async&libraries=places,streetView`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&libraries=places,streetView`;
     script.async = true;
     script.defer = true;
     script.onload = () => {
