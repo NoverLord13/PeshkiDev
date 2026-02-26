@@ -1,7 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './GuessMap.css';
 
-function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActive = false, onHelp, helpRadiusKm = 100, helpCenter, language = 'ru', onVisibilityChange }) {
+const YAKUTSK_VIEW = { center: { lat: 62.027575, lng: 129.731505 }, zoom: 10 };
+const YAKUTIA_VIEW = { center: { lat: 62.5, lng: 127 }, zoom: 5 };
+
+function GuessMap({
+  onGuess,
+  disabled,
+  actualLocation,
+  guessedLocation,
+  helpActive = false,
+  onHelp,
+  helpRadiusKm = 100,
+  helpCenter,
+  language = 'ru',
+  mode = 'all',
+  onVisibilityChange,
+}) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
@@ -34,6 +49,15 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
     }
   }, [isVisible, onVisibilityChange]);
 
+  const getInitialView = () => (mode === 'yakutsk' ? YAKUTSK_VIEW : YAKUTIA_VIEW);
+
+  const resetMapView = () => {
+    if (!mapInstanceRef.current) return;
+    const view = getInitialView();
+    mapInstanceRef.current.setCenter(view.center);
+    mapInstanceRef.current.setZoom(view.zoom);
+  };
+
   useEffect(() => {
     if (mapInstanceRef.current && actualLocation && guessedLocation) {
       showResults();
@@ -59,13 +83,9 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
         markerRef.current = null;
         setHasMarker(false);
       }
-      // Сбрасываем карту на центр Якутии
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.setCenter({ lat: 62.5, lng: 127 });
-        mapInstanceRef.current.setZoom(5);
-      }
+      resetMapView();
     }
-  }, [actualLocation, guessedLocation]);
+  }, [actualLocation, guessedLocation, mode]);
 
   useEffect(() => {
     if (mapInstanceRef.current) {
@@ -81,7 +101,40 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
     }
   }, [disabled]);
 
-  useEffect(() => {
+  const restoreGuessMarker = () => {
+    if (!mapInstanceRef.current) return;
+
+    let position = null;
+    if (guessedLocation) {
+      position = guessedLocation;
+    } else if (markerRef.current && markerRef.current.getPosition) {
+      const currentPosition = markerRef.current.getPosition();
+      if (currentPosition) {
+        position = { lat: currentPosition.lat(), lng: currentPosition.lng() };
+      }
+    }
+    if (!position) return;
+
+    if (markerRef.current) {
+      markerRef.current.setMap(null);
+    }
+
+    markerRef.current = new window.google.maps.Marker({
+      position,
+      map: mapInstanceRef.current,
+      icon: {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: '#4285F4',
+        fillOpacity: 1,
+        strokeColor: '#fff',
+        strokeWeight: 3,
+      },
+    });
+    setHasMarker(true);
+  };
+
+  const syncHelpCircle = () => {
     if (!mapInstanceRef.current || !actualLocation) return;
 
     if (helpCircleRef.current) {
@@ -103,21 +156,33 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
       });
       mapInstanceRef.current.panTo(actualLocation);
     }
-  }, [helpActive, helpRadiusKm, actualLocation]);
+  };
+
+  useEffect(() => {
+    syncHelpCircle();
+  }, [helpActive, helpRadiusKm, actualLocation, helpCenter]);
 
   const initMap = () => {
     if (mapRef.current && window.google && window.google.maps) {
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
-        center: { lat: 62.5, lng: 127 },
-        zoom: 5,
+        center: getInitialView().center,
+        zoom: getInitialView().zoom,
         mapTypeControl: false,
         streetViewControl: false,
         zoomControl: false,
         fullscreenControl: false,
       });
 
-      // Сбрасываем состояние маркера при инициализации
-      setHasMarker(false);
+      syncHelpCircle();
+
+      if (actualLocation && guessedLocation) {
+        showResults();
+      } else {
+        restoreGuessMarker();
+        if (!markerRef.current) {
+          setHasMarker(false);
+        }
+      }
 
       if (!disabled) {
         clickListenerRef.current = mapInstanceRef.current.addListener('click', (e) => {

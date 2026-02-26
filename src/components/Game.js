@@ -510,6 +510,7 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
         helpRadiusKm={HELP_RADIUS_KM}
         helpCenter={helpCenter}
         language={language}
+        mode={mode}
         onVisibilityChange={setIsMapVisible}
       />
 
@@ -530,4 +531,3 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
 }
 
 export default Game;
-
