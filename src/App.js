@@ -61,10 +61,18 @@ function App() {
     return <div className="loading">Загрузка карт...</div>;
   }
 
-  const langLabel = language === 'ru' ? 'Язык: Русский' : 'Язык: Саха';
-  const themeLabel = theme === 'dark' ? 'Светлый режим' : 'Тёмный режим';
-  const timerLabel = timerEnabled ? 'Таймер: Вкл' : 'Таймер: Выкл';
-  const modeLabel = mode === 'yakutsk' ? 'Режим: Только Якутск' : 'Режим: Вся Якутия';
+  const isYakut = language === 'sah';
+  const langLabel = isYakut ? 'Тыл: Саха' : 'Язык: Русский';
+  const themeLabel = isYakut
+    ? (theme === 'dark' ? 'Сырдык эрэсиим' : 'Харана эрэсиим')
+    : (theme === 'dark' ? 'Светлый режим' : 'Тёмный режим');
+  const timerLabel = isYakut
+    ? (timerEnabled ? 'Таймер: Холбонно' : 'Таймер: Араарылынна')
+    : (timerEnabled ? 'Таймер: Вкл' : 'Таймер: Выкл');
+  const modeLabel = isYakut
+    ? (mode === 'yakutsk' ? 'Эрэсиим: Дьокуускай эрэ' : 'Эрэсиим: Бүтүн Саха Сирэ')
+    : (mode === 'yakutsk' ? 'Режим: Только Якутск' : 'Режим: Вся Якутия');
+  const contactLabel = isYakut ? 'Биһиги кытта ситим' : 'Связаться с нами';
 
   return (
     <div className={`App theme-${theme}`}>
@@ -127,7 +135,7 @@ function App() {
             rel="noopener noreferrer"
             className="settings-item settings-link"
           >
-            Связаться с нами
+            {contactLabel}
           </a>
         </div>
       </div>
