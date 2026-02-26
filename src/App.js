@@ -13,17 +13,15 @@ function App() {
   const [mode, setMode] = useState('all'); // all | yakutsk
 
   useEffect(() => {
-    // Загружаем API ключ
-    fetch('/tocenJS.txt')
-      .then(response => response.text())
-      .then(key => {
-        const trimmedKey = key.trim();
-        setApiKey(trimmedKey);
-        loadGoogleMapsAPI(trimmedKey);
-      })
-      .catch(err => console.error('Ошибка загрузки API ключа:', err));
+    const key = process.env.REACT_APP_GMAPS_API_KEY;
+    if (!key) {
+      console.error('API ключ не найден в переменных окружения');
+      return;
+    }
+    setApiKey(key);
+    loadGoogleMapsAPI(key);
   }, []);
-
+  
   const loadGoogleMapsAPI = (key) => {
     if (window.google) {
       setMapsLoaded(true);
@@ -31,7 +29,7 @@ function App() {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&libraries=places,streetView`;
     script.async = true;
     script.defer = true;
     script.onload = () => {
