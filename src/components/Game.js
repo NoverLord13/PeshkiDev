@@ -6,18 +6,13 @@ import ResultModal from './ResultModal';
 import FinalResults from './FinalResults';
 
 const TOTAL_ROUNDS = 5;
-const REGION_BOUNDS = {
-  // Примерные границы Республики Саха (Якутия)
-  north: 76,
-  south: 55,
-  west: 105,
-  east: 151,
-};
-const SEARCH_RADIUS = 10000; // до 10 км вокруг города для поиска панорамы
-const CITY_RADIUS_KM = 2; // радиус вокруг города для случайного выбора точки
+
+const SEARCH_RADIUS = 17000; // до 10 км вокруг города для поиска панорамы
+const CITY_RADIUS_KM = 17; // радиус вокруг города для случайного выбора точки
 const MAX_ATTEMPTS_PER_ROUND = 10; // максимум попыток на один раунд
 const MAX_GENERATION_ATTEMPTS = TOTAL_ROUNDS * 3; // общее количество попыток генерации
 const HELP_RADIUS_KM = 100;
+const ROUND_TIME_SECONDS = 120; // 2 минуты на раунд
 
 // Список городов и населенных пунктов Якутии с примерными координатами
 const YAKUTIA_CITIES = [
@@ -97,7 +92,7 @@ const YAKUTIA_CITIES = [
   { name: 'Хани', lat: 62.466667, lng: 124.683333, type: 'village' }
 ];
 
-function Game({ onReset, language = 'ru' }) {
+function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, mode = 'all' }) {
   const [currentRound, setCurrentRound] = useState(1);
   const [roundLocations, setRoundLocations] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -112,6 +107,8 @@ function Game({ onReset, language = 'ru' }) {
   const [roundsError, setRoundsError] = useState('');
   const [helpActive, setHelpActive] = useState(false);
   const [helpCenter, setHelpCenter] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(ROUND_TIME_SECONDS);
+  const [isMapVisible, setIsMapVisible] = useState(true);
   const streetViewServiceRef = useRef(null);
 
   const totalRounds = roundLocations.length || TOTAL_ROUNDS;
@@ -180,9 +177,15 @@ function Game({ onReset, language = 'ru' }) {
 
   // Ищем панораму в случайном городе из списка
   const findPanoramaInYakutia = async () => {
+    const citiesPool = mode === 'yakutsk'
+      ? YAKUTIA_CITIES.filter((c) => c.name === 'Якутск')
+      : YAKUTIA_CITIES;
+
+    const effectiveCities = citiesPool.length > 0 ? citiesPool : YAKUTIA_CITIES;
+
     for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_ROUND; attempt++) {
       // Случайно выбираем город
-      const randomCity = YAKUTIA_CITIES[Math.floor(Math.random() * YAKUTIA_CITIES.length)];
+      const randomCity = effectiveCities[Math.floor(Math.random() * effectiveCities.length)];
       
       // Генерируем случайную точку в радиусе 10 км вокруг города
       const searchPoint = getRandomPointAroundCity(randomCity, CITY_RADIUS_KM);
@@ -308,6 +311,34 @@ function Game({ onReset, language = 'ru' }) {
     return 0;
   };
 
+  const handleTimeUp = () => {
+    if (!currentLocation || showResult) return;
+
+    // Время вышло — 0 баллов, показываем локацию
+    const lat = currentLocation.lat;
+    const lng = currentLocation.lng;
+
+    setGuessedLocation({ lat, lng });
+    const dist = 0;
+    const finalScore = 0;
+
+    setDistance(dist);
+    setRoundScore(finalScore);
+    setTotalScore(prev => prev + finalScore);
+
+    setRoundResults(prev => [...prev, {
+      round: currentRound,
+      distance: dist,
+      score: finalScore,
+      actual: { lat: currentLocation.lat, lng: currentLocation.lng },
+      guessed: { lat, lng },
+      location: currentLocation,
+      timedOut: true,
+    }]);
+
+    setShowResult(true);
+  };
+
   const handleGuess = (lat, lng) => {
     if (!currentLocation) return;
     playSound('guess');
@@ -338,6 +369,37 @@ function Game({ onReset, language = 'ru' }) {
     setShowResult(true);
   };
 
+  // Сбрасываем таймер при переходе на новый раунд / новую локацию
+  useEffect(() => {
+    if (!currentLocation || gameFinished) return;
+    setTimeLeft(ROUND_TIME_SECONDS);
+  }, [currentRound, currentLocation, gameFinished]);
+
+  // Запускаем обратный отсчёт (если таймер включён)
+  useEffect(() => {
+    if (!timerEnabled) return;
+    if (showResult || gameFinished || !currentLocation) return;
+
+    const intervalId = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(intervalId);
+          handleTimeUp();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [timerEnabled, showResult, gameFinished, currentLocation]);
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   const nextRound = () => {
     if (currentRound >= totalRounds) {
       setGameFinished(true);
@@ -365,7 +427,10 @@ function Game({ onReset, language = 'ru' }) {
   if (loadingRounds) {
     return (
       <div className="loading">
-        {isYakut ? 'Саха Сирин панорамаларын көстүүбүт...' : 'Ищем случайные панорамы Якутии...'}
+        <div className="loading-spinner" aria-hidden="true"></div>
+        <div className="loading-text">
+          {isYakut ? 'Загрузка...' : 'Загрузка...'}
+        </div>
       </div>
     );
   }
@@ -410,7 +475,7 @@ function Game({ onReset, language = 'ru' }) {
   }
 
   return (
-    <div className="game">
+    <div className={`game ${theme === 'dark' ? 'theme-dark' : 'theme-light'}`}>
       <div className="game-header">
         <div className="round-info">
           {isYakut ? 'Раунд' : 'Раунд'} {currentRound} / {totalRounds}
@@ -418,27 +483,12 @@ function Game({ onReset, language = 'ru' }) {
         <div className="score-info">
           {isYakut ? 'Балл: ' : 'Очки: '}{totalScore.toLocaleString()}
         </div>
+        {timerEnabled && (
+          <div className={`timer-info ${timeLeft <= 30 ? 'low' : ''}`}>
+            {formatTime(timeLeft)}
+          </div>
+        )}
       </div>
-
-      {!showResult && (
-        <div className="hints-panel">
-          <button
-            className={`hint-button ${helpActive ? 'used' : ''}`}
-            onClick={() => {
-              setHelpActive(true);
-              if (!helpCenter && currentLocation) {
-                setHelpCenter(getHelpCenter(currentLocation));
-              }
-              playSound('help');
-            }}
-            disabled={helpActive}
-          >
-            {helpActive
-              ? (isYakut ? 'Көмө түбэһин көрдөрүллүбэтэ' : 'Радиус подсказки включен')
-              : (isYakut ? 'Көмө түбэһинэн' : 'Помощь (радиус)')}
-          </button>
-        </div>
-      )}
 
       <StreetView
         location={currentLocation}
@@ -446,13 +496,22 @@ function Game({ onReset, language = 'ru' }) {
 
       <GuessMap 
         onGuess={handleGuess}
-        disabled={showResult}
+        disabled={showResult || (timerEnabled && timeLeft <= 0)}
         actualLocation={currentLocation}
         guessedLocation={guessedLocation}
         helpActive={helpActive}
+        onHelp={() => {
+          setHelpActive(true);
+          if (!helpCenter && currentLocation) {
+            setHelpCenter(getHelpCenter(currentLocation));
+          }
+          playSound('help');
+        }}
         helpRadiusKm={HELP_RADIUS_KM}
         helpCenter={helpCenter}
         language={language}
+        mode={mode}
+        onVisibilityChange={setIsMapVisible}
       />
 
       {showResult && (
@@ -472,4 +531,3 @@ function Game({ onReset, language = 'ru' }) {
 }
 
 export default Game;
-

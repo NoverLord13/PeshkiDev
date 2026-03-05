@@ -1,7 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './GuessMap.css';
 
-function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActive = false, helpRadiusKm = 100, helpCenter, language = 'ru' }) {
+const YAKUTSK_VIEW = { center: { lat: 62.027575, lng: 129.731505 }, zoom: 10 };
+const YAKUTIA_VIEW = { center: { lat: 62.5, lng: 127 }, zoom: 5 };
+
+function GuessMap({
+  onGuess,
+  disabled,
+  actualLocation,
+  guessedLocation,
+  helpActive = false,
+  onHelp,
+  helpRadiusKm = 100,
+  helpCenter,
+  language = 'ru',
+  mode = 'all',
+  onVisibilityChange,
+}) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
@@ -10,10 +25,10 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
   const helpCircleRef = useRef(null);
   const clickListenerRef = useRef(null);
 
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isVisible, setIsVisible] = useState(window.innerWidth > 600); 
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   const [hasMarker, setHasMarker] = useState(false); // Отслеживаем наличие маркера для активации кнопки
-  // На мобилке карта скрыта, на ПК видна сразу
+  // Карта открывается по кнопке и сразу в full-screen (без миникарты)
 
   useEffect(() => {
     if (window.google && window.google.maps && isVisible) {
@@ -26,6 +41,22 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
       }
     };
   }, [isVisible]);
+
+  // Сообщаем родителю об изменении видимости карты
+  useEffect(() => {
+    if (typeof onVisibilityChange === 'function') {
+      onVisibilityChange(isVisible);
+    }
+  }, [isVisible, onVisibilityChange]);
+
+  const getInitialView = () => (mode === 'yakutsk' ? YAKUTSK_VIEW : YAKUTIA_VIEW);
+
+  const resetMapView = () => {
+    if (!mapInstanceRef.current) return;
+    const view = getInitialView();
+    mapInstanceRef.current.setCenter(view.center);
+    mapInstanceRef.current.setZoom(view.zoom);
+  };
 
   useEffect(() => {
     if (mapInstanceRef.current && actualLocation && guessedLocation) {
@@ -52,13 +83,9 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
         markerRef.current = null;
         setHasMarker(false);
       }
-      // Сбрасываем карту на центр Якутии
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.setCenter({ lat: 62.5, lng: 127 });
-        mapInstanceRef.current.setZoom(5);
-      }
+      resetMapView();
     }
-  }, [actualLocation, guessedLocation]);
+  }, [actualLocation, guessedLocation, mode]);
 
   useEffect(() => {
     if (mapInstanceRef.current) {
@@ -74,7 +101,40 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
     }
   }, [disabled]);
 
-  useEffect(() => {
+  const restoreGuessMarker = () => {
+    if (!mapInstanceRef.current) return;
+
+    let position = null;
+    if (guessedLocation) {
+      position = guessedLocation;
+    } else if (markerRef.current && markerRef.current.getPosition) {
+      const currentPosition = markerRef.current.getPosition();
+      if (currentPosition) {
+        position = { lat: currentPosition.lat(), lng: currentPosition.lng() };
+      }
+    }
+    if (!position) return;
+
+    if (markerRef.current) {
+      markerRef.current.setMap(null);
+    }
+
+    markerRef.current = new window.google.maps.Marker({
+      position,
+      map: mapInstanceRef.current,
+      icon: {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: '#4285F4',
+        fillOpacity: 1,
+        strokeColor: '#fff',
+        strokeWeight: 3,
+      },
+    });
+    setHasMarker(true);
+  };
+
+  const syncHelpCircle = () => {
     if (!mapInstanceRef.current || !actualLocation) return;
 
     if (helpCircleRef.current) {
@@ -96,20 +156,33 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
       });
       mapInstanceRef.current.panTo(actualLocation);
     }
-  }, [helpActive, helpRadiusKm, actualLocation]);
+  };
+
+  useEffect(() => {
+    syncHelpCircle();
+  }, [helpActive, helpRadiusKm, actualLocation, helpCenter]);
 
   const initMap = () => {
     if (mapRef.current && window.google && window.google.maps) {
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
-        center: { lat: 62.5, lng: 127 },
-        zoom: 5,
+        center: getInitialView().center,
+        zoom: getInitialView().zoom,
         mapTypeControl: false,
         streetViewControl: false,
+        zoomControl: false,
         fullscreenControl: false,
       });
 
-      // Сбрасываем состояние маркера при инициализации
-      setHasMarker(false);
+      syncHelpCircle();
+
+      if (actualLocation && guessedLocation) {
+        showResults();
+      } else {
+        restoreGuessMarker();
+        if (!markerRef.current) {
+          setHasMarker(false);
+        }
+      }
 
       if (!disabled) {
         clickListenerRef.current = mapInstanceRef.current.addListener('click', (e) => {
@@ -192,58 +265,50 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
   };
 
   return (
-  <>
-    {/* Кнопка открытия карты на мобильных */}
-    {!isVisible && (
-      <button className="open-map-btn" onClick={() => setIsVisible(true)}>
-        {isYakut ? 'Картаны ас' : 'Открыть карту'}
-      </button>
-    )}
+    <>
+      {/* Кнопка открытия карты (и ПК, и мобилка) */}
+      {!isVisible && (
+        <button
+          className="open-map-btn"
+          onClick={() => {
+            setIsVisible(true);
+            setIsExpanded(true);
+          }}
+        >
+          {isYakut ? 'Картаны ас' : 'Открыть карту'}
+        </button>
+      )}
 
-    {isVisible && (
-      <div className={`guess-map-container ${isExpanded ? 'expanded' : ''}`}>
-        {/* Внутренний контейнер для относительного позиционирования кнопок */}
-        <div className="guess-map-inner">
-          
-          {/* Кнопка свернуть (только мобильная) */}
-          {window.innerWidth <= 600 && (
-            <button 
-              className="close-map-btn"
-              onClick={() => {
-                setIsExpanded(false);
-                setIsVisible(false);
-              }}
-            >
-              ✕
-            </button>
-          )}
+      {isVisible && (
+        <div className={`guess-map-container ${isExpanded ? 'expanded' : ''}`}>
 
-          <div className="map-header">
-            <button 
-              className="expand-button"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? '−' : '+'}
-            </button>
-          </div>
+          {/* Кнопка закрыть карту */}
+          <button 
+            className="close-map-btn"
+            onClick={() => {
+              setIsExpanded(false);
+              setIsVisible(false);
+            }}
+          >
+            ✕
+          </button>
 
           <div ref={mapRef} className="guess-map"></div>
 
-          {/* Кнопка "Угадать" для миникарты (не развернутой) */}
-          {!disabled && !isExpanded && (
-            <button 
-              className="guess-button small-map-btn"
-              onClick={handleGuess}
-              disabled={!hasMarker}
+          {!disabled && isExpanded && (
+            <button
+              type="button"
+              className={`help-button ${helpActive ? 'used' : ''}`}
+              onClick={onHelp}
+              disabled={helpActive}
             >
-              {isYakut ? 'Билиир' : 'Угадать'}
+              {helpActive ? (isYakut ? 'Көмө түбэһин көстүбүт' : 'Подсказка включена') : (isYakut ? 'Көмө (радиус)' : 'Помощь (радиус)')}
             </button>
           )}
 
-          {/* Кнопка "Угадать" для развернутой карты */}
           {!disabled && isExpanded && (
             <button 
-              className="guess-button expanded-btn"
+              className="guess-button"
               onClick={handleGuess}
               disabled={!hasMarker}
             >
@@ -251,10 +316,9 @@ function GuessMap({ onGuess, disabled, actualLocation, guessedLocation, helpActi
             </button>
           )}
         </div>
-      </div>
-    )}
-  </>
-);
+      )}
+    </>
+  );
 }
 
 export default GuessMap;

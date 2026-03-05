@@ -13,17 +13,8 @@
   transition: all 0.3s ease;
   z-index: 10;
 
-  max-width: calc(100vw - 30px);
-  max-height: calc(60vh);
-  
-  /* Убираем position: relative, добавляем внутренний контейнер */
-}
-
-/* Добавьте этот класс для внутреннего контейнера */
-.guess-map-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  max-width: calc(100vw - 30px);  /* 🔥 Не вылезает за экран */
+  max-height: calc(60vh);         /* 🔥 На мобилке не перекрывает UI */
 }
 
 .guess-map-container.expanded {
@@ -34,6 +25,11 @@
   transform: translate(-50%, -50%);
   bottom: auto;
   right: auto;
+}
+
+/* Когда карта открыта — всегда как full-screen (без "мини") */
+.guess-map-container {
+  max-height: calc(90vh);
 }
 
 .map-header {
@@ -70,38 +66,24 @@
 /* Сместить зум/компас Google Maps чуть выше середины */
 .guess-map .gm-bundled-control-on-bottom,
 .guess-map .gm-bundled-control {
-  top: 30% !important; /* Поднимаем еще выше */
+  top: 45% !important;
   bottom: auto !important;
   right: 8px !important;
   transform: translateY(-50%);
 }
 
-/* Кнопка для маленькой карты */
-.guess-button.small-map-btn {
-  position: absolute;
-  bottom: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 10px 24px;
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 25px;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  transition: transform 0.2s, opacity 0.2s;
-  z-index: 1000; /* Высокий z-index чтобы быть над элементами Google Maps */
-  white-space: nowrap;
+/* Убираем кнопку/контролы с классом gm-control-active */
+.guess-map .gm-control-active {
+  display: none !important;
 }
 
-/* Кнопка для развернутой карты */
-.guess-button.expanded-btn {
+/* Кнопка */
+.guess-button {
   position: absolute;
-  bottom: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom)); /* 🔥 iPhone safe area */
   left: 50%;
   transform: translateX(-50%);
+
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
@@ -110,22 +92,88 @@
   font-weight: bold;
   border-radius: 50px;
   cursor: pointer;
+
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   transition: transform 0.2s;
-  z-index: 1000;
+  z-index: 12;
+}
+
+/* Кнопка подсказки — как "Угадать", но сверху */
+.help-button {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+
+  background: linear-gradient(135deg, #FFA726 0%, #FB8C00 100%);
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255, 167, 38, 0.35);
+  transition: transform 0.2s, box-shadow 0.2s;
+  z-index: 13;
+}
+
+.help-button:hover:not(:disabled) {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 18px rgba(255, 167, 38, 0.45);
+}
+
+.help-button:disabled {
+  opacity: 0.85;
+  cursor: not-allowed;
+}
+
+.help-button.used {
+  background: linear-gradient(135deg, #66BB6A 0%, #43A047 100%);
+  box-shadow: 0 4px 14px rgba(67, 160, 71, 0.35);
 }
 
 .guess-button:hover:not(:disabled) {
   transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
 }
 
 .guess-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: translateX(-50%);
 }
 
+/* 📱 Адаптация под мобильные */
+@media (max-width: 480px) {
+  .guess-map-container {
+    right: 10px;
+    bottom: 15px;
+
+    width: 80vw;
+    height: 35vh;
+    border-radius: 12px;
+  }
+
+  .guess-map-container.expanded {
+    width: 95vw;
+    height: 88vh;
+  }
+
+  .expand-button {
+    width: 34px;
+    height: 34px;
+    font-size: 20px;
+  }
+
+  .guess-button {
+    padding: 10px 26px;
+    font-size: 15px;
+  }
+
+  .help-button {
+    padding: 9px 18px;
+    font-size: 13px;
+  }
+}
 .open-map-btn {
   position: absolute;
   bottom: 20px;
@@ -147,13 +195,6 @@
 
 .open-map-btn:hover {
   transform: translateY(-2px);
-}
-
-/* Прячем кнопку на ПК */
-@media (min-width: 600px) {
-  .open-map-btn {
-    display: none;
-  }
 }
 
 /* Кнопка СВЕРНУТЬ карту */
@@ -190,43 +231,5 @@
 }
 
 /* На ПК кнопка не нужна */
-@media (min-width: 600px) {
-  .close-map-btn {
-    display: none;
-  }
-  
-  /* На ПК увеличим немного кнопку на миникарте */
-  .guess-button.small-map-btn {
-    padding: 12px 28px;
-    font-size: 15px;
-  }
-}
+/* (оставляем видимой и на ПК) */
 
-/* 📱 Адаптация под мобильные */
-@media (max-width: 480px) {
-  .guess-map-container {
-    right: 10px;
-    bottom: 15px;
-
-    width: 80vw;
-    height: 35vh;
-    border-radius: 12px;
-  }
-
-  .guess-map-container.expanded {
-    width: 95vw;
-    height: 88vh;
-  }
-
-  .expand-button {
-    width: 34px;
-    height: 34px;
-    font-size: 20px;
-  }
-
-  .guess-button.small-map-btn,
-  .guess-button.expanded-btn {
-    padding: 10px 26px;
-    font-size: 15px;
-  }
-}

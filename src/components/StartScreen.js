@@ -1,7 +1,7 @@
 import React from 'react';
 import './StartScreen.css';
 
-function StartScreen({ onStart, language = 'ru', onToggleLanguage }) {
+function StartScreen({ onStart, language = 'ru', mode = 'all', onChangeMode }) {
   const isYakut = language === 'sah';
 
   const title = isYakut
@@ -13,20 +13,12 @@ function StartScreen({ onStart, language = 'ru', onToggleLanguage }) {
     : 'Угадай локацию на панораме!\n5 раундов • Чем ближе угадаешь, тем больше очков';
 
   const startLabel = isYakut ? 'Ойноону саҕалаа' : 'Начать игру';
-  const langButtonLabel = isYakut ? 'Русский' : 'Саха тыла';
+  const allModeLabel = isYakut ? 'Барыта Якутия' : 'Вся Якутия';
+  const yakutskModeLabel = isYakut ? 'Только Дьокуускай' : 'Только Якутск';
 
   return (
     <div className="start-screen">
       <div className="start-content">
-        <div className="start-header">
-          <button
-            className="lang-toggle"
-            type="button"
-            onClick={onToggleLanguage}
-          >
-            {langButtonLabel}
-          </button>
-        </div>
         <img 
           src="https://trafaret.papik.pro/uploads/posts/2024-09/trafaret-papik-pro-hlf1-p-trafareti-sakhalii-ouordar-1.jpg" 
           alt={isYakut ? 'Саха Сирэ' : 'Якутия'}
@@ -41,6 +33,22 @@ function StartScreen({ onStart, language = 'ru', onToggleLanguage }) {
             </React.Fragment>
           ))}
         </p>
+        <div className="mode-buttons">
+          <button
+            type="button"
+            className={`mode-button ${mode !== 'yakutsk' ? 'active' : ''}`}
+            onClick={() => onChangeMode && onChangeMode('all')}
+          >
+            {allModeLabel}
+          </button>
+          <button
+            type="button"
+            className={`mode-button ${mode === 'yakutsk' ? 'active' : ''}`}
+            onClick={() => onChangeMode && onChangeMode('yakutsk')}
+          >
+            {yakutskModeLabel}
+          </button>
+        </div>
         <button className="start-button" onClick={onStart}>
           {startLabel}
         </button>

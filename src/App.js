@@ -8,6 +8,9 @@ function App() {
   const [mapsLoaded, setMapsLoaded] = useState(false);
   const [screen, setScreen] = useState('start'); // start | game
   const [language, setLanguage] = useState('ru'); // ru | sah
+  const [theme, setTheme] = useState('light'); // light | dark
+  const [timerEnabled, setTimerEnabled] = useState(true);
+  const [mode, setMode] = useState('all'); // all | yakutsk
 
   useEffect(() => {
     const key = process.env.REACT_APP_GMAPS_API_KEY;
@@ -18,7 +21,7 @@ function App() {
     setApiKey(key);
     loadGoogleMapsAPI(key);
   }, []);
-
+  
   const loadGoogleMapsAPI = (key) => {
     if (window.google) {
       setMapsLoaded(true);
@@ -50,25 +53,92 @@ function App() {
     setScreen('start');
   };
 
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
+
   if (!apiKey || !mapsLoaded) {
     return <div className="loading">Загрузка карт...</div>;
   }
 
+  const isYakut = language === 'sah';
+  const langLabel = isYakut ? 'Тыл: Саха' : 'Язык: Русский';
+  const themeLabel = isYakut
+    ? (theme === 'dark' ? 'Сырдык эрэсиим' : 'Харана эрэсиим')
+    : (theme === 'dark' ? 'Светлый режим' : 'Тёмный режим');
+  const timerLabel = isYakut
+    ? (timerEnabled ? 'Таймер: Холбонно' : 'Таймер: Араарылынна')
+    : (timerEnabled ? 'Таймер: Вкл' : 'Таймер: Выкл');
+  const modeLabel = isYakut
+    ? (mode === 'yakutsk' ? 'Эрэсиим: Дьокуускай эрэ' : 'Эрэсиим: Бүтүн Саха Сирэ')
+    : (mode === 'yakutsk' ? 'Режим: Только Якутск' : 'Режим: Вся Якутия');
+  const contactLabel = isYakut ? 'Биһиги кытта ситим' : 'Связаться с нами';
+
   return (
-    <div className="App">
+    <div className={`App theme-${theme}`}>
       {screen === 'start' && (
         <StartScreen
           onStart={handleStart}
           language={language}
-          onToggleLanguage={toggleLanguage}
+          mode={mode}
+          onChangeMode={setMode}
         />
       )}
       {screen === 'game' && (
         <Game
           onReset={resetGame}
           language={language}
+          theme={theme}
+          timerEnabled={timerEnabled}
+          mode={mode}
         />
       )}
+
+      {/* Глобальные настройки (шестерёнка) — доступны на всех экранах */}
+      <div className="settings-fab">
+        <input id="settings-toggle" type="checkbox" className="settings-toggle-input" />
+        <label htmlFor="settings-toggle" className="settings-fab-button">
+          ⚙
+        </label>
+        <div className="settings-panel">
+          <button
+            type="button"
+            className="settings-item"
+            onClick={toggleTheme}
+          >
+            {themeLabel}
+          </button>
+          <button
+            type="button"
+            className="settings-item"
+            onClick={toggleLanguage}
+          >
+            {langLabel}
+          </button>
+          <button
+            type="button"
+            className="settings-item"
+            onClick={() => setTimerEnabled(prev => !prev)}
+          >
+            {timerLabel}
+          </button>
+          <button
+            type="button"
+            className="settings-item"
+            onClick={() => setMode(prev => (prev === 'yakutsk' ? 'all' : 'yakutsk'))}
+          >
+            {modeLabel}
+          </button>
+          <a
+            href="https://t.me/alpinisti4"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="settings-item settings-link"
+          >
+            {contactLabel}
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
