@@ -25,6 +25,7 @@ function GuessMap({
   const helpCircleRef = useRef(null);
   const clickListenerRef = useRef(null);
 
+  const [isMapVisible, setIsMapVisible] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
   const [hasMarker, setHasMarker] = useState(false); // Отслеживаем наличие маркера для активации кнопки

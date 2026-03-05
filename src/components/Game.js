@@ -124,10 +124,11 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
       streetViewServiceRef.current = new window.google.maps.StreetViewService();
       initRounds();
     }
-  }, []);
+  }, [mode]);
 
   const getPanoramaAtPoint = (point) => new Promise((resolve) => {
     if (!streetViewServiceRef.current) return resolve(null);
+    const radius = mode === 'all' ? 10000 : 17000;
     streetViewServiceRef.current.getPanorama(
       {
         location: point,
@@ -187,6 +188,8 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
       // Случайно выбираем город
       const randomCity = effectiveCities[Math.floor(Math.random() * effectiveCities.length)];
       
+      const cityRadius = mode === 'all' ? 10 : CITY_RADIUS_KM;
+
       // Генерируем случайную точку в радиусе 10 км вокруг города
       const searchPoint = getRandomPointAroundCity(randomCity, CITY_RADIUS_KM);
       
@@ -419,6 +422,7 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
       setHelpActive(false);
       setHelpCenter(getHelpCenter(nextLocation));
       playSound('next');
+      setIsMapVisible(false);
     }
   };
 
