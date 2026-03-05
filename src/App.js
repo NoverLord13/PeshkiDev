@@ -10,7 +10,7 @@ function App() {
   const [language, setLanguage] = useState('ru'); // ru | sah
   const [theme, setTheme] = useState('light'); // light | dark
   const [timerEnabled, setTimerEnabled] = useState(true);
-  const [mode, setMode] = useState('all'); // all | yakutsk
+  const [mode, setMode] = useState('yakutsk'); // all | yakutsk
 
   useEffect(() => {
     const key = process.env.REACT_APP_GMAPS_API_KEY;
