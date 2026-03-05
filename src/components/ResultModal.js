@@ -8,14 +8,16 @@ function ResultModal({ distance, score, currentRound, totalRounds, onNext, locat
   useEffect(() => {
     if (!window.google || !window.google.maps || !location || !guessedLocation) return;
 
+    // Создаём карту с начальным центром и умеренным зумом
     mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
       center: location,
-      zoom: 5,
+      zoom: 5, // начальный зум, но будет скорректирован ниже
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
     });
 
+    // Маркер actual (зелёный)
     const actualMarker = new window.google.maps.Marker({
       position: location,
       map: mapInstanceRef.current,
@@ -29,6 +31,7 @@ function ResultModal({ distance, score, currentRound, totalRounds, onNext, locat
       },
     });
 
+    // Маркер guessed (красный)
     const guessMarker = new window.google.maps.Marker({
       position: guessedLocation,
       map: mapInstanceRef.current,
@@ -42,6 +45,7 @@ function ResultModal({ distance, score, currentRound, totalRounds, onNext, locat
       },
     });
 
+    // Линия между точками
     const line = new window.google.maps.Polyline({
       path: [guessedLocation, location],
       geodesic: true,
@@ -51,11 +55,31 @@ function ResultModal({ distance, score, currentRound, totalRounds, onNext, locat
       map: mapInstanceRef.current,
     });
 
-    const bounds = new window.google.maps.LatLngBounds();
-    bounds.extend(guessedLocation);
-    bounds.extend(location);
-    mapInstanceRef.current.fitBounds(bounds);
+    // Вычисляем расстояние между точками (в км)
+    const R = 6371; // Радиус Земли
+    const dLat = (location.lat - guessedLocation.lat) * Math.PI / 180;
+    const dLng = (location.lng - guessedLocation.lng) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(guessedLocation.lat * Math.PI / 180) * Math.cos(location.lat * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const dist = R * c;
 
+    // Если расстояние очень маленькое (меньше 0.1 км) — точки практически совпадают (тайм-аут)
+    if (dist < 0.1) {
+      // Устанавливаем фиксированный зум, чтобы показать окрестности
+      mapInstanceRef.current.setZoom(12); // подберите комфортное значение (12-13)
+      mapInstanceRef.current.setCenter(location);
+    } else {
+      // Иначе подгоняем границы, чтобы были видны обе точки
+      const bounds = new window.google.maps.LatLngBounds();
+      bounds.extend(guessedLocation);
+      bounds.extend(location);
+      mapInstanceRef.current.fitBounds(bounds);
+    }
+
+    // Очистка при размонтировании
     return () => {
       actualMarker.setMap(null);
       guessMarker.setMap(null);
@@ -141,4 +165,3 @@ function ResultModal({ distance, score, currentRound, totalRounds, onNext, locat
 }
 
 export default ResultModal;
-
