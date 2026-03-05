@@ -16,6 +16,7 @@ function GuessMap({
   language = 'ru',
   mode = 'all',
   onVisibilityChange,
+  forceHideMap, 
 }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -49,6 +50,12 @@ function GuessMap({
       onVisibilityChange(isVisible);
     }
   }, [isVisible, onVisibilityChange]);
+
+  useEffect(() => {
+    // При изменении forceHideMap (например, при переходе на новый раунд)
+    // принудительно скрываем карту
+    setIsVisible(false);
+  }, [forceHideMap]);
 
   const getInitialView = () => (mode === 'yakutsk' ? YAKUTSK_VIEW : YAKUTIA_VIEW);
 

@@ -109,6 +109,7 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
   const [helpCenter, setHelpCenter] = useState(null);
   const [timeLeft, setTimeLeft] = useState(ROUND_TIME_SECONDS);
   const [isMapVisible, setIsMapVisible] = useState(true);
+  const [forceHideMap, setForceHideMap] = useState(false);
   const streetViewServiceRef = useRef(null);
 
   const totalRounds = roundLocations.length || TOTAL_ROUNDS;
@@ -422,6 +423,7 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
       setHelpActive(false);
       setHelpCenter(getHelpCenter(nextLocation));
       playSound('next');
+      setForceHideMap(prev => !prev);
       setIsMapVisible(false);
     }
   };
@@ -516,6 +518,7 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
         language={language}
         mode={mode}
         onVisibilityChange={setIsMapVisible}
+        forceHideMap={forceHideMap}
       />
 
       {showResult && (
