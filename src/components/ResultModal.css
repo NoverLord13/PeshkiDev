@@ -1,32 +1,38 @@
 .result-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   background: rgba(0, 0, 0, 0.7);
   display: flex;
-  justify-content: center;
-  align-items: center;
+  justify-content: stretch;
+  align-items: stretch;
   z-index: 1000;
   animation: fadeIn 0.3s ease-in;
 }
 
 .result-modal {
   background: white;
-  padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  height: 100dvh;
+  padding: calc(14px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  border-radius: 0;
+  box-shadow: none;
   text-align: center;
-  min-width: 500px;
-  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
   animation: slideUp 0.3s ease-out;
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(50px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
@@ -39,32 +45,36 @@
   align-items: center;
   justify-content: center;
   gap: 15px;
-  margin-bottom: 25px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
 .grade-emoji {
-  font-size: 48px;
+  font-size: 42px;
 }
 
 .result-modal h2 {
-  font-size: 36px;
+  font-size: clamp(28px, 5vw, 36px);
   margin: 0;
 }
 
 .result-map {
   width: 100%;
-  height: 300px;
-  border-radius: 12px;
+  height: min(63vh, 540px);
+  min-height: 345px;
+  border-radius: 14px;
   overflow: hidden;
-  margin-bottom: 25px;
+  margin-bottom: 18px;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+  flex-shrink: 0;
 }
 
 .result-stats {
   display: flex;
-  gap: 40px;
+  gap: 28px;
+  flex-wrap: wrap;
   justify-content: center;
-  margin-bottom: 30px;
+  margin-bottom: 18px;
 }
 
 .stat {
@@ -81,7 +91,7 @@
 }
 
 .stat-value {
-  font-size: 32px;
+  font-size: clamp(28px, 6vw, 36px);
   font-weight: bold;
   color: #333;
 }
@@ -97,7 +107,9 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  padding: 15px 40px;
+  width: 100%;
+  margin-top: auto;
+  padding: 14px 20px;
   font-size: 18px;
   font-weight: bold;
   border-radius: 50px;
@@ -112,5 +124,25 @@
 
 .next-button:active {
   transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+  .result-map {
+    height: 57vh;
+    min-height: 330px;
+  }
+
+  .result-stats {
+    gap: 16px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    letter-spacing: 0.7px;
+  }
+
+  .next-button {
+    font-size: 16px;
+  }
 }
 

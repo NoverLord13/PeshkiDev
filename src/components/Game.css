@@ -1,13 +1,14 @@
 .game {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   position: relative;
   overflow: hidden;
 }
 
 .game-header {
   position: absolute;
-  top: 20px;
+  top: calc(12px + env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -24,11 +25,20 @@
   font-weight: bold;
   color: #333;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.round-info {
+  min-width: 90px;
 }
 
 .score-info {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  min-width: 112px;
+  font-variant-numeric: tabular-nums;
 }
 
 .timer-info {
@@ -155,7 +165,7 @@
 
 .simple-guess-panel {
   position: absolute;
-  bottom: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
@@ -216,8 +226,34 @@
 
 /* 📱 Мобильная адаптация */
 @media (max-width: 480px) {
+  .game-header {
+    gap: 8px;
+    top: calc(8px + env(safe-area-inset-top));
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .round-info,
+  .score-info,
+  .timer-info {
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+
+  .round-info {
+    min-width: 76px;
+  }
+
+  .score-info {
+    min-width: 96px;
+  }
+
+  .timer-info {
+    min-width: 74px;
+  }
+
   .simple-guess-panel {
-    bottom: 15px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
     padding: 10px 12px;
     border-radius: 20px;         /* проще форма на маленьких экранах */
   }
@@ -236,7 +272,7 @@
 .settings-fab {
   position: absolute;
   left: 20px;
-  bottom: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
   z-index: 30;
 }
 

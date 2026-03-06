@@ -1,45 +1,86 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 import Game from './components/Game';
 import StartScreen from './components/StartScreen';
+
+const MAPS_SCRIPT_ID = 'google-maps-js-api';
+let mapsLoaderPromise = null;
+
+function loadGoogleMapsAPI(key) {
+  if (window.google?.maps) {
+    return Promise.resolve();
+  }
+
+  if (mapsLoaderPromise) {
+    return mapsLoaderPromise;
+  }
+
+  const existingScript = document.getElementById(MAPS_SCRIPT_ID)
+    || document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
+  if (existingScript) {
+    if (!existingScript.id) {
+      existingScript.id = MAPS_SCRIPT_ID;
+    }
+    mapsLoaderPromise = new Promise((resolve, reject) => {
+      existingScript.addEventListener('load', () => resolve(), { once: true });
+      existingScript.addEventListener('error', () => {
+        mapsLoaderPromise = null;
+        reject(new Error('Google Maps API script failed to load'));
+      }, { once: true });
+    });
+    return mapsLoaderPromise;
+  }
+
+  mapsLoaderPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.id = MAPS_SCRIPT_ID;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => {
+      mapsLoaderPromise = null;
+      reject(new Error('Google Maps API script failed to load'));
+    };
+    document.head.appendChild(script);
+  });
+
+  return mapsLoaderPromise;
+}
 
 function App() {
   const [apiKey, setApiKey] = useState('');
   const [mapsLoaded, setMapsLoaded] = useState(false);
   const [screen, setScreen] = useState('start'); // start | game
   const [language, setLanguage] = useState('ru'); // ru | sah
-  const [theme, setTheme] = useState('light'); // light | dark
   const [timerEnabled, setTimerEnabled] = useState(true);
-  const [mode, setMode] = useState('all'); // all | yakutsk
+  const [mode, setMode] = useState('all');
 
   useEffect(() => {
-    const key = process.env.REACT_APP_GMAPS_API_KEY;
-    if (!key) {
-      console.error('API ключ не найден в переменных окружения');
-      return;
-    }
-    setApiKey(key);
-    loadGoogleMapsAPI(key);
-  }, []);
-  
-  const loadGoogleMapsAPI = (key) => {
-    if (window.google) {
-      setMapsLoaded(true);
-      return;
-    }
+    let cancelled = false;
 
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&libraries=places,streetView`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      setMapsLoaded(true);
+    fetch('/tocenJS.txt')
+      .then((response) => response.text())
+      .then((key) => {
+        const trimmedKey = key.trim();
+        if (!cancelled) {
+          setApiKey(trimmedKey);
+        }
+        return loadGoogleMapsAPI(trimmedKey);
+      })
+      .then(() => {
+        if (!cancelled) {
+          setMapsLoaded(true);
+        }
+      })
+      .catch((err) => {
+        console.error('Google Maps API load error:', err);
+      });
+
+    return () => {
+      cancelled = true;
     };
-    script.onerror = () => {
-      console.error('Ошибка загрузки Google Maps API');
-    };
-    document.head.appendChild(script);
-  };
+  }, []);
 
   const handleStart = () => {
     setScreen('game');
@@ -53,29 +94,19 @@ function App() {
     setScreen('start');
   };
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
-
   if (!apiKey || !mapsLoaded) {
     return <div className="loading">Загрузка карт...</div>;
   }
 
   const isYakut = language === 'sah';
   const langLabel = isYakut ? 'Тыл: Саха' : 'Язык: Русский';
-  const themeLabel = isYakut
-    ? (theme === 'dark' ? 'Сырдык эрэсиим' : 'Харана эрэсиим')
-    : (theme === 'dark' ? 'Светлый режим' : 'Тёмный режим');
   const timerLabel = isYakut
     ? (timerEnabled ? 'Таймер: Холбонно' : 'Таймер: Араарылынна')
     : (timerEnabled ? 'Таймер: Вкл' : 'Таймер: Выкл');
-  const modeLabel = isYakut
-    ? (mode === 'yakutsk' ? 'Эрэсиим: Дьокуускай эрэ' : 'Эрэсиим: Бүтүн Саха Сирэ')
-    : (mode === 'yakutsk' ? 'Режим: Только Якутск' : 'Режим: Вся Якутия');
   const contactLabel = isYakut ? 'Биһиги кытта ситим' : 'Связаться с нами';
 
   return (
-    <div className={`App theme-${theme}`}>
+    <div className="App theme-light">
       {screen === 'start' && (
         <StartScreen
           onStart={handleStart}
@@ -84,30 +115,23 @@ function App() {
           onChangeMode={setMode}
         />
       )}
+
       {screen === 'game' && (
         <Game
           onReset={resetGame}
           language={language}
-          theme={theme}
+          theme="light"
           timerEnabled={timerEnabled}
           mode={mode}
         />
       )}
 
-      {/* Глобальные настройки (шестерёнка) — доступны на всех экранах */}
       <div className="settings-fab">
         <input id="settings-toggle" type="checkbox" className="settings-toggle-input" />
         <label htmlFor="settings-toggle" className="settings-fab-button">
           ⚙
         </label>
         <div className="settings-panel">
-          <button
-            type="button"
-            className="settings-item"
-            onClick={toggleTheme}
-          >
-            {themeLabel}
-          </button>
           <button
             type="button"
             className="settings-item"
@@ -118,16 +142,9 @@ function App() {
           <button
             type="button"
             className="settings-item"
-            onClick={() => setTimerEnabled(prev => !prev)}
+            onClick={() => setTimerEnabled((prev) => !prev)}
           >
             {timerLabel}
-          </button>
-          <button
-            type="button"
-            className="settings-item"
-            onClick={() => setMode(prev => (prev === 'yakutsk' ? 'all' : 'yakutsk'))}
-          >
-            {modeLabel}
           </button>
           <a
             href="https://t.me/alpinisti4"
@@ -144,4 +161,3 @@ function App() {
 }
 
 export default App;
-

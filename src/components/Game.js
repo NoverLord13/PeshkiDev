@@ -9,10 +9,12 @@ const TOTAL_ROUNDS = 5;
 
 const SEARCH_RADIUS = 17000; // до 10 км вокруг города для поиска панорамы
 const CITY_RADIUS_KM = 17; // радиус вокруг города для случайного выбора точки
-const MAX_ATTEMPTS_PER_ROUND = 10; // максимум попыток на один раунд
-const MAX_GENERATION_ATTEMPTS = TOTAL_ROUNDS * 3; // общее количество попыток генерации
 const HELP_RADIUS_KM = 100;
 const ROUND_TIME_SECONDS = 120; // 2 минуты на раунд
+const PANORAMA_HISTORY_KEY = 'yktguessr.panoHistory';
+const PANORAMA_HISTORY_LIMIT = 240;
+const CITY_HISTORY_KEY = 'yktguessr.cityHistory';
+const CITY_HISTORY_LIMIT = 80;
 
 // Список городов и населенных пунктов Якутии с примерными координатами
 const YAKUTIA_CITIES = [
@@ -126,12 +128,12 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
     }
   }, []);
 
-  const getPanoramaAtPoint = (point) => new Promise((resolve) => {
+  const getPanoramaAtPoint = (point, radius = SEARCH_RADIUS) => new Promise((resolve) => {
     if (!streetViewServiceRef.current) return resolve(null);
     streetViewServiceRef.current.getPanorama(
       {
         location: point,
-        radius: SEARCH_RADIUS,
+        radius,
         preference: window.google.maps.StreetViewPreference.NEAREST,
         source: window.google.maps.StreetViewSource.OUTDOOR,
       },
@@ -145,116 +147,250 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
     );
   });
 
-  // Проверяем, что панорама находится в одном из известных городов
-  const isPanoramaInKnownCity = (panorama) => {
-    if (!panorama || !panorama.location) return false;
-    const desc = (panorama.location.description || '').toLowerCase();
-    const shortDesc = (panorama.location.shortDescription || '').toLowerCase();
-    const text = `${desc} ${shortDesc}`;
+  const toRad = (value) => value * Math.PI / 180;
+  const distanceKm = (lat1, lng1, lat2, lng2) => {
+    const earthRadiusKm = 6371;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat / 2) ** 2
+      + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+    return earthRadiusKm * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+  };
 
-    // Проверяем наличие названий городов в описании
-    return YAKUTIA_CITIES.some(city => {
-      const cityNameLower = city.name.toLowerCase();
-      return text.includes(cityNameLower);
+  const shuffle = (items) => {
+    const copy = [...items];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  };
+
+  const getModeCities = () => (
+    mode === 'yakutsk'
+      ? YAKUTIA_CITIES.filter((city) => city.name === '\u042f\u043a\u0443\u0442\u0441\u043a')
+      : YAKUTIA_CITIES
+  );
+
+  const createProbePoints = (city) => {
+    const radii = [0, 2.5, 5, 8.5, 12, 16];
+    const angleOffset = Math.random() * Math.PI * 2;
+    return radii.map((radius, index) => {
+      if (radius === 0) {
+        return { lat: city.lat, lng: city.lng };
+      }
+      const angle = angleOffset + ((Math.PI * 2) / (radii.length - 1)) * (index - 1);
+      const dLat = (radius * Math.cos(angle)) / 111;
+      const dLng = (radius * Math.sin(angle)) / (111 * Math.cos(toRad(city.lat)));
+      return { lat: city.lat + dLat, lng: city.lng + dLng };
     });
   };
 
-  // Генерируем случайную точку в радиусе вокруг города
-  const getRandomPointAroundCity = (city, radiusKm) => {
-    // Генерируем случайное расстояние (0 до radiusKm) и угол
-    const distanceKm = Math.random() * radiusKm;
-    const angle = Math.random() * Math.PI * 2;
-    
-    // Преобразуем расстояние в градусы (примерно 111 км на градус)
-    const dLat = (distanceKm * Math.cos(angle)) / 111;
-    const dLng = (distanceKm * Math.sin(angle)) / (111 * Math.cos(city.lat * Math.PI / 180));
-    
+  const normalizePanoramaCandidate = (panorama, city) => {
+    if (!panorama?.location?.latLng) return null;
+
+    const panoId = panorama.location.pano;
+    if (!panoId) return null;
+
+    const lat = panorama.location.latLng.lat();
+    const lng = panorama.location.latLng.lng();
+    const distToCity = distanceKm(lat, lng, city.lat, city.lng);
+    const maxAllowedDistance = Math.max(CITY_RADIUS_KM + 8, 22);
+    if (distToCity > maxAllowedDistance) return null;
+
     return {
-      lat: city.lat + dLat,
-      lng: city.lng + dLng,
+      panoId,
+      lat,
+      lng,
+      city: city.name,
+      place: panorama.location.shortDescription
+        || panorama.location.description?.split(',')[0]?.trim()
+        || '\u041f\u0430\u043d\u043e\u0440\u0430\u043c\u0430',
+      cityDistanceKm: distToCity,
     };
   };
 
-  // Ищем панораму в случайном городе из списка
-  const findPanoramaInYakutia = async () => {
-    const citiesPool = mode === 'yakutsk'
-      ? YAKUTIA_CITIES.filter((c) => c.name === 'Якутск')
-      : YAKUTIA_CITIES;
+  const getPanoramaHistoryKey = () => `${PANORAMA_HISTORY_KEY}:${mode}`;
+  const getCityHistoryKey = () => `${CITY_HISTORY_KEY}:${mode}`;
 
-    const effectiveCities = citiesPool.length > 0 ? citiesPool : YAKUTIA_CITIES;
-
-    for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_ROUND; attempt++) {
-      // Случайно выбираем город
-      const randomCity = effectiveCities[Math.floor(Math.random() * effectiveCities.length)];
-      
-      // Генерируем случайную точку в радиусе 10 км вокруг города
-      const searchPoint = getRandomPointAroundCity(randomCity, CITY_RADIUS_KM);
-      
-      // Ищем панораму в этой точке
-      const panorama = await getPanoramaAtPoint(searchPoint);
-      
-      // Проверяем, что панорама находится в одном из известных городов
-      if (panorama && isPanoramaInKnownCity(panorama)) {
-        return panorama;
-      }
+  const readHistory = (key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+      return [];
     }
-    return null;
   };
 
-  const mapPanoramaToLocation = (panorama, index) => {
-    const latLng = panorama.location.latLng;
-    const desc = (panorama.location.description || '').toLowerCase();
-    const shortDesc = (panorama.location.shortDescription || '').toLowerCase();
-    const text = `${desc} ${shortDesc}`;
-    
-    // Находим название города из описания
-    let cityName = 'Якутия';
-    for (const city of YAKUTIA_CITIES) {
-      if (text.includes(city.name.toLowerCase())) {
-        cityName = city.name;
-        break;
+  const writeHistory = (key, values, limit) => {
+    const prev = readHistory(key);
+    const all = [...prev, ...values.filter(Boolean)];
+    const seen = new Set();
+    const dedupedReversed = [];
+
+    for (let i = all.length - 1; i >= 0; i--) {
+      const value = all[i];
+      if (seen.has(value)) continue;
+      seen.add(value);
+      dedupedReversed.push(value);
+    }
+
+    const deduped = dedupedReversed.reverse();
+    const limitedValues = deduped.slice(-limit);
+
+    try {
+      localStorage.setItem(key, JSON.stringify(limitedValues));
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  const readPanoHistory = () => readHistory(getPanoramaHistoryKey());
+  const readCityHistory = () => readHistory(getCityHistoryKey());
+  const writePanoHistory = (panoIds) => writeHistory(getPanoramaHistoryKey(), panoIds, PANORAMA_HISTORY_LIMIT);
+  const writeCityHistory = (cityNames) => writeHistory(getCityHistoryKey(), cityNames, CITY_HISTORY_LIMIT);
+
+  const discoverCandidates = async ({
+    blockedPanoIds = new Set(),
+    blockedCityNames = new Set(),
+    allowBlockedCities = false,
+    requestBudget = 120,
+  } = {}) => {
+    const modeCities = getModeCities();
+    const cityPool = modeCities.length > 0 ? modeCities : YAKUTIA_CITIES;
+    const preferredCities = allowBlockedCities
+      ? cityPool
+      : cityPool.filter((city) => !blockedCityNames.has(city.name));
+    const fallbackCities = cityPool.filter((city) => blockedCityNames.has(city.name));
+    const cityQueue = shuffle([
+      ...preferredCities,
+      ...(allowBlockedCities ? [] : shuffle(fallbackCities)),
+    ]);
+
+    const byPanoId = new Map();
+    let requests = 0;
+    const targetCandidates = TOTAL_ROUNDS * 10;
+
+    for (const city of cityQueue) {
+      if (requests >= requestBudget || byPanoId.size >= targetCandidates) break;
+      const probePoints = createProbePoints(city);
+
+      for (const point of probePoints) {
+        if (requests >= requestBudget || byPanoId.size >= targetCandidates) break;
+        requests += 1;
+
+        const panorama = await getPanoramaAtPoint(point);
+        const candidate = normalizePanoramaCandidate(panorama, city);
+        if (!candidate) continue;
+        if (blockedPanoIds.has(candidate.panoId)) continue;
+        if (byPanoId.has(candidate.panoId)) continue;
+
+        byPanoId.set(candidate.panoId, candidate);
       }
     }
-    
-    return {
-      id: panorama.location.pano || index,
-      lat: latLng.lat(),
-      lng: latLng.lng(),
-      city: cityName,
-      place: panorama.location.shortDescription || panorama.location.description?.split(',')[0]?.trim() || 'Панорама',
-      hint: 'Республика Саха (Якутия)',
+
+    return [...byPanoId.values()];
+  };
+
+  const selectRoundsFromCandidates = (candidates, historyCityNames) => {
+    const minDistanceBetweenRoundsKm = mode === 'yakutsk' ? 1.5 : 14;
+    const selected = [];
+    const usedPano = new Set();
+    const usedCity = new Set();
+
+    const scoreCandidate = (candidate) => {
+      let score = 0;
+      score += historyCityNames.has(candidate.city) ? -90 : 80;
+      score += Math.max(0, 14 - candidate.cityDistanceKm) * 2;
+      score += Math.random() * 25;
+      return score;
     };
+
+    const ranked = [...candidates].sort((a, b) => scoreCandidate(b) - scoreCandidate(a));
+
+    const isTooClose = (candidate) => selected.some(
+      (existing) => distanceKm(existing.lat, existing.lng, candidate.lat, candidate.lng) < minDistanceBetweenRoundsKm
+    );
+
+    for (const candidate of ranked) {
+      if (selected.length >= TOTAL_ROUNDS) break;
+      if (usedPano.has(candidate.panoId)) continue;
+      if (usedCity.has(candidate.city)) continue;
+      if (isTooClose(candidate)) continue;
+
+      selected.push(candidate);
+      usedPano.add(candidate.panoId);
+      usedCity.add(candidate.city);
+    }
+
+    for (const candidate of ranked) {
+      if (selected.length >= TOTAL_ROUNDS) break;
+      if (usedPano.has(candidate.panoId)) continue;
+      if (isTooClose(candidate)) continue;
+
+      selected.push(candidate);
+      usedPano.add(candidate.panoId);
+      usedCity.add(candidate.city);
+    }
+
+    for (const candidate of ranked) {
+      if (selected.length >= TOTAL_ROUNDS) break;
+      if (usedPano.has(candidate.panoId)) continue;
+
+      selected.push(candidate);
+      usedPano.add(candidate.panoId);
+      usedCity.add(candidate.city);
+    }
+
+    return selected.slice(0, TOTAL_ROUNDS);
   };
 
   const initRounds = async () => {
     setLoadingRounds(true);
     setRoundsError('');
 
-    const generated = [];
-    const usedPanoIds = new Set(); // Для предотвращения дубликатов
-    let attempts = 0;
+    const historyPanoIds = new Set(readPanoHistory());
+    const historyCityNames = new Set(readCityHistory());
 
-    while (generated.length < TOTAL_ROUNDS && attempts < MAX_GENERATION_ATTEMPTS) {
-      const panorama = await findPanoramaInYakutia();
-      attempts += 1;
-      if (!panorama) {
-        continue;
-      }
-      
-      // Проверяем, не использовали ли мы уже эту панораму
-      const panoId = panorama.location.pano;
-      if (panoId && usedPanoIds.has(panoId)) {
-        continue;
-      }
-      
-      if (panoId) {
-        usedPanoIds.add(panoId);
-      }
-      
-      generated.push(mapPanoramaToLocation(panorama, generated.length));
+    const phaseOneCandidates = await discoverCandidates({
+      blockedPanoIds: historyPanoIds,
+      blockedCityNames: historyCityNames,
+      allowBlockedCities: false,
+      requestBudget: mode === 'yakutsk' ? 90 : 140,
+    });
+
+    let selectedCandidates = selectRoundsFromCandidates(phaseOneCandidates, historyCityNames);
+
+    if (selectedCandidates.length < TOTAL_ROUNDS) {
+      const selectedPanoIds = new Set(selectedCandidates.map((candidate) => candidate.panoId));
+      const phaseTwoCandidates = await discoverCandidates({
+        blockedPanoIds: new Set([...historyPanoIds, ...selectedPanoIds]),
+        blockedCityNames: historyCityNames,
+        allowBlockedCities: true,
+        requestBudget: mode === 'yakutsk' ? 70 : 120,
+      });
+
+      selectedCandidates = selectRoundsFromCandidates(
+        [...selectedCandidates, ...phaseTwoCandidates],
+        historyCityNames
+      );
     }
 
-    if (generated.length > 0) {
+    if (selectedCandidates.length > 0) {
+      const generated = selectedCandidates.slice(0, TOTAL_ROUNDS).map((candidate, index) => ({
+        id: candidate.panoId || index,
+        lat: candidate.lat,
+        lng: candidate.lng,
+        city: candidate.city,
+        place: candidate.place,
+        hint: '\u0420\u0435\u0441\u043f\u0443\u0431\u043b\u0438\u043a\u0430 \u0421\u0430\u0445\u0430 (\u042f\u043a\u0443\u0442\u0438\u044f)',
+      }));
+
+      writePanoHistory(generated.map((item) => item.id));
+      writeCityHistory(generated.map((item) => item.city));
+
       setRoundLocations(generated);
       setCurrentLocation(generated[0]);
       setCurrentRound(1);
@@ -268,7 +404,7 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
       setHelpActive(false);
       setHelpCenter(generated[0] ? getHelpCenter(generated[0]) : null);
     } else {
-      setRoundsError('Не удалось найти панорамы в Якутии. Попробуйте еще раз.');
+      setRoundsError('\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043d\u0430\u0439\u0442\u0438 \u043f\u0430\u043d\u043e\u0440\u0430\u043c\u044b \u0432 \u042f\u043a\u0443\u0442\u0438\u0438. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437.');
     }
 
     setLoadingRounds(false);
@@ -288,17 +424,7 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
     };
   };
 
-  const calculateDistance = (lat1, lng1, lat2, lng2) => {
-    const R = 6371; // Радиус Земли в км
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
+  const calculateDistance = (lat1, lng1, lat2, lng2) => distanceKm(lat1, lng1, lat2, lng2);
 
   const calculateScore = (distanceKm) => {
     // Система очков как в GeoGuessr
@@ -478,10 +604,10 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
     <div className={`game ${theme === 'dark' ? 'theme-dark' : 'theme-light'}`}>
       <div className="game-header">
         <div className="round-info">
-          {isYakut ? 'Раунд' : 'Раунд'} {currentRound} / {totalRounds}
+          {currentRound} / {totalRounds}
         </div>
         <div className="score-info">
-          {isYakut ? 'Балл: ' : 'Очки: '}{totalScore.toLocaleString()}
+          {totalScore.toLocaleString()}
         </div>
         {timerEnabled && (
           <div className={`timer-info ${timeLeft <= 30 ? 'low' : ''}`}>
