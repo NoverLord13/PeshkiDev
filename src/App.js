@@ -59,10 +59,18 @@ function App() {
   useEffect(() => {
     let cancelled = false;
 
-    fetch('/tocenJS.txt')
-      .then((response) => response.text())
+    const envKey = process.env.REACT_APP_GMAPS_API_KEY;
+    const keyPromise = envKey
+      ? Promise.resolve(envKey)
+      : fetch('/tocenJS.txt')
+        .then((response) => response.text());
+
+    keyPromise
       .then((key) => {
         const trimmedKey = key.trim();
+        if (!trimmedKey) {
+          throw new Error('API key not found');
+        }
         if (!cancelled) {
           setApiKey(trimmedKey);
         }

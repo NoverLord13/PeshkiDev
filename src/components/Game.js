@@ -7,9 +7,12 @@ import FinalResults from './FinalResults';
 
 const TOTAL_ROUNDS = 5;
 
-const SEARCH_RADIUS = 17000; // до 10 км вокруг города для поиска панорамы
-const CITY_RADIUS_KM = 17; // радиус вокруг города для случайного выбора точки
-const HELP_RADIUS_KM = 100;
+const SEARCH_RADIUS_YAKUTSK = 17000; // базовый радиус поиска панорамы для Якутска
+const SEARCH_RADIUS_ALL = 6000; // уменьшенный радиус для режима "Вся Якутия"
+const CITY_RADIUS_KM_YAKUTSK = 17; // базовый радиус вокруг города для Якутска
+const CITY_RADIUS_KM_ALL = 6; // уменьшенный радиус для режима "Вся Якутия"
+const HELP_RADIUS_KM_ALL = 100;
+const HELP_RADIUS_KM_YAKUTSK = 3;
 const ROUND_TIME_SECONDS = 120; // 2 минуты на раунд
 const PANORAMA_HISTORY_KEY = 'yktguessr.panoHistory';
 const PANORAMA_HISTORY_LIMIT = 240;
@@ -18,80 +21,64 @@ const CITY_HISTORY_LIMIT = 80;
 
 // Список городов и населенных пунктов Якутии с примерными координатами
 const YAKUTIA_CITIES = [
-  // уже были
-  { name: 'Якутск', lat: 62.027575, lng: 129.731505 },
-  { name: 'Покровск', lat: 61.661400, lng: 129.393579 },
-  { name: 'Мирный', lat: 62.535278, lng: 113.961111 },
-  { name: 'Вилюйск', lat: 63.755833, lng: 121.624444 },
-  { name: 'Сунтар', lat: 62.157122, lng: 117.650234 },
-  { name: 'Нерюнгри', lat: 56.658333, lng: 124.725000 },
-  { name: 'Алдан', lat: 58.603333, lng: 125.389444 },
-  { name: 'Ленск', lat: 60.725278, lng: 114.927778 },
-  { name: 'Олёкминск', lat: 60.374167, lng: 120.420278 },
-  { name: 'Среднеколымск', lat: 67.456667, lng: 153.706944 },
-  { name: 'Верхоянск', lat: 67.550556, lng: 133.390833 },
-  { name: 'Удачный', lat: 66.408333, lng: 112.297222 },
-  { name: 'Айхал', lat: 65.950000, lng: 111.500000 },
-  { name: 'Чурапча', lat: 62.669658, lng: 131.153541 },
-  { name: 'Намцы', lat: 62.716667, lng: 129.666667 },
-  { name: 'Амга', lat: 60.900000, lng: 131.983333 },
-  { name: 'Бердигестях', lat: 62.100000, lng: 126.700000 },
-  { name: 'Майя', lat: 61.733333, lng: 130.283333 },
-  { name: 'Хандыга', lat: 62.666667, lng: 135.566667 },
-  { name: 'Жиганск', lat: 66.766667, lng: 123.366667 },
+  // Города (city)
+  { name: 'Якутск', lat: 62.0272, lng: 129.7321, type: 'city' },
+  { name: 'Мирный', lat: 62.5353, lng: 113.9611, type: 'city' },
+  { name: 'Нерюнгри', lat: 56.6583, lng: 124.7250, type: 'city' },
+  { name: 'Алдан', lat: 58.6033, lng: 125.3894, type: 'city' },
+  { name: 'Ленск', lat: 60.7253, lng: 114.9278, type: 'city' },
+  { name: 'Вилюйск', lat: 63.7558, lng: 121.6244, type: 'city' },
+  { name: 'Олёкминск', lat: 60.3742, lng: 120.4203, type: 'city' },
+  { name: 'Покровск', lat: 61.4772, lng: 129.1414, type: 'city' },
+  { name: 'Нюрба', lat: 63.2833, lng: 118.3333, type: 'city' },
+  { name: 'Томмот', lat: 58.9675, lng: 126.3006, type: 'city' },
+  { name: 'Удачный', lat: 66.4083, lng: 112.2972, type: 'city' },
+  { name: 'Среднеколымск', lat: 67.4567, lng: 153.7069, type: 'city' },
+  { name: 'Верхоянск', lat: 67.5506, lng: 133.3908, type: 'city' },
 
-  // новые города и посёлки (urban-type)
-  { name: 'Нюрба', lat: 63.283333, lng: 118.333333, type: 'urban' },
-  { name: 'Томмот', lat: 58.967500, lng: 126.300556, type: 'urban' },
-  { name: 'Алмазный', lat: 58.627778, lng: 125.379444, type: 'urban' },
-  { name: 'Батагай', lat: 67.653611, lng: 134.597778, type: 'urban' },
-  { name: 'Белая Гора', lat: 68.533333, lng: 147.066667, type: 'urban' },
-  { name: 'Беркакит', lat: 58.633333, lng: 124.766667, type: 'urban' },
-  { name: 'Чернышевский', lat: 62.983333, lng: 135.566667, type: 'urban' },
-  { name: 'Черский', lat: 68.750000, lng: 161.300000, type: 'urban' },
-  { name: 'Чокурдах', lat: 70.633333, lng: 147.916667, type: 'urban' },
-  { name: 'Чульман', lat: 56.866667, lng: 124.883333, type: 'urban' },
-  { name: 'Депутатский', lat: 69.300000, lng: 149.883333, type: 'urban' },
-  { name: 'Джебарики-Хая', lat: 62.216667, lng: 124.716667, type: 'urban' },
-  { name: 'Эльдикан', lat: 60.403333, lng: 135.066667, type: 'urban' },
-  { name: 'Эсэ-Хайя', lat: 67.466667, lng: 118.166667, type: 'urban' },
-  { name: 'Югорёнок', lat: 60.533333, lng: 135.033333, type: 'urban' },
-  { name: 'Кысыл-Сыр', lat: 63.716667, lng: 121.000000, type: 'urban' },
-  { name: 'Лебединый', lat: 58.616667, lng: 125.350000, type: 'urban' },
-  { name: 'Ленинский', lat: 58.700000, lng: 125.416667, type: 'urban' },
-  { name: 'Нижний Бестях', lat: 61.966667, lng: 129.883333, type: 'urban' },
-  { name: 'Нижний Куранах', lat: 58.700000, lng: 125.483333, type: 'urban' },
-  { name: 'Нижнеянск', lat: 70.766667, lng: 149.916667, type: 'urban' },
-  { name: 'Пеледуй', lat: 60.350000, lng: 115.166667, type: 'urban' },
-  { name: 'Пригородный', lat: 62.000000, lng: 129.666667, type: 'village' },
-  { name: 'Сангар', lat: 62.083333, lng: 117.966667, type: 'urban' },
-  { name: 'Серебряный Бор', lat: 56.866667, lng: 124.750000, type: 'urban' },
-  { name: 'Солнечный', lat: 60.366667, lng: 120.883333, type: 'urban' },
-  { name: 'Светлый', lat: 60.933333, lng: 114.916667, type: 'urban' },
-  { name: 'Тикси', lat: 71.633333, lng: 128.866667, type: 'urban' },
-  { name: 'Торго', lat: 60.216667, lng: 119.766667, type: 'urban' },
-  { name: 'Усть-Куйга', lat: 70.000000, lng: 135.550000, type: 'urban' },
-  { name: 'Усть-Мая', lat: 60.400000, lng: 134.533333, type: 'urban' },
-  { name: 'Усть-Нера', lat: 64.566667, lng: 143.216667, type: 'urban' },
-  { name: 'Витим', lat: 59.450000, lng: 112.583333, type: 'urban' },
-  { name: 'Жатай', lat: 62.200000, lng: 129.800000, type: 'urban' },
-  { name: 'Золотинка', lat: 63.700000, lng: 122.466667, type: 'urban' },
-  { name: 'Звёздочка', lat: 62.200000, lng: 114.633333, type: 'urban' },
-  { name: 'Зырянка', lat: 65.750000, lng: 150.866667, type: 'urban' },
+  // Посёлки городского типа (urban)
+  { name: 'Айхал', lat: 65.9500, lng: 111.5000, type: 'urban' },
+  { name: 'Жатай', lat: 62.1303, lng: 129.8331, type: 'urban' },
+  { name: 'Нижний Бестях', lat: 61.9575, lng: 129.9108, type: 'urban' },
+  { name: 'Тикси', lat: 71.6333, lng: 128.8667, type: 'urban' },
+  { name: 'Усть-Нера', lat: 64.5667, lng: 143.2167, type: 'urban' },
+  { name: 'Хандыга', lat: 62.6547, lng: 135.5606, type: 'urban' },
+  { name: 'Нижний Куранах', lat: 58.8353, lng: 125.5028, type: 'urban' },
+  { name: 'Светлый', lat: 63.0589, lng: 113.4131, type: 'urban' },
+  { name: 'Чернышевский', lat: 63.0122, lng: 112.4658, type: 'urban' },
+  { name: 'Чульман', lat: 56.8456, lng: 124.9078, type: 'urban' },
+  { name: 'Депутатский', lat: 69.3117, lng: 149.9039, type: 'urban' },
+  { name: 'Батагай', lat: 67.6536, lng: 134.5978, type: 'urban' },
+  { name: 'Сангар', lat: 63.9231, lng: 127.4722, type: 'urban' },
+  { name: 'Черский', lat: 68.7500, lng: 161.3000, type: 'urban' },
+  { name: 'Серебряный Бор', lat: 56.6542, lng: 124.8117, type: 'urban' },
+  { name: 'Беркакит', lat: 56.5819, lng: 124.7864, type: 'urban' },
+  { name: 'Белая Гора', lat: 68.5333, lng: 147.0667, type: 'urban' },
+  { name: 'Чокурдах', lat: 70.6333, lng: 147.9167, type: 'urban' },
+  { name: 'Кысыл-Сыр', lat: 63.8919, lng: 122.7631, type: 'urban' },
+  { name: 'Витим', lat: 59.4500, lng: 112.5833, type: 'urban' },
+  { name: 'Пеледуй', lat: 59.6267, lng: 112.7503, type: 'urban' },
+  { name: 'Усть-Мая', lat: 60.4167, lng: 134.4500, type: 'urban' },
+  { name: 'Джебарики-Хая', lat: 62.2042, lng: 135.8039, type: 'urban' },
+  { name: 'Зырянка', lat: 65.7333, lng: 150.8917, type: 'urban' },
+  { name: 'Усть-Куйга', lat: 70.0000, lng: 135.5500, type: 'urban' },
+  { name: 'Алмазный', lat: 62.4542, lng: 114.3167, type: 'urban' },
+  { name: 'Солнечный', lat: 58.5600, lng: 125.4167, type: 'urban' },
+  { name: 'Ленинский', lat: 58.5732, lng: 125.4374, type: 'urban' },
+  { name: 'Золотинка', lat: 56.1242, lng: 124.5833, type: 'urban' },
 
-  // крупные/упоминаемые сёла и деревни
-  { name: 'Хатассы', lat: 62.033333, lng: 129.716667, type: 'village' },
-  { name: 'Чурапча', lat: 62.669658, lng: 131.153541, type: 'village' },
-  { name: 'Намцы', lat: 62.716667, lng: 129.666667, type: 'village' },
-  { name: 'Майя', lat: 61.733333, lng: 130.283333, type: 'village' },
-  { name: 'Сунтар', lat: 62.157122, lng: 117.650234, type: 'village' },
-  { name: 'Амга', lat: 60.900000, lng: 131.983333, type: 'village' },
-  { name: 'Бердигестях', lat: 62.100000, lng: 126.700000, type: 'village' },
-  { name: 'Хандыга', lat: 62.666667, lng: 135.566667, type: 'village' },
-  { name: 'Жиганск', lat: 66.766667, lng: 123.366667, type: 'village' },
-  { name: 'Аллах-Юнь', lat: 56.216667, lng: 125.266667, type: 'village' },
-  { name: 'Артык', lat: 58.816667, lng: 125.766667, type: 'village' },
-  { name: 'Хани', lat: 62.466667, lng: 124.683333, type: 'village' }
+  // Села и крупные наслеги (village)
+  { name: 'Чурапча', lat: 62.0000, lng: 132.4333, type: 'village' },
+  { name: 'Намцы', lat: 62.7167, lng: 129.6667, type: 'village' },
+  { name: 'Майя', lat: 61.7333, lng: 130.2833, type: 'village' },
+  { name: 'Амга', lat: 60.9000, lng: 131.9833, type: 'village' },
+  { name: 'Бердигестях', lat: 62.1000, lng: 126.7000, type: 'village' },
+  { name: 'Сунтар', lat: 62.1571, lng: 117.6502, type: 'village' },
+  { name: 'Жиганск', lat: 66.7667, lng: 123.3667, type: 'village' },
+  { name: 'Хатассы', lat: 61.9056, lng: 129.6389, type: 'village' },
+  { name: 'Аллах-Юнь', lat: 61.1256, lng: 137.9833, type: 'village' },
+  { name: 'Артык', lat: 64.1833, lng: 145.1333, type: 'village' },
+  { name: 'Хани', lat: 56.3403, lng: 117.4111, type: 'village' }
 ];
 
 function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, mode = 'all' }) {
@@ -128,7 +115,14 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
     }
   }, []);
 
-  const getPanoramaAtPoint = (point, radius = SEARCH_RADIUS) => new Promise((resolve) => {
+  const getSearchRadiusMeters = () => (mode === 'yakutsk' ? SEARCH_RADIUS_YAKUTSK : SEARCH_RADIUS_ALL);
+  const getCityRadiusKm = () => (mode === 'yakutsk' ? CITY_RADIUS_KM_YAKUTSK : CITY_RADIUS_KM_ALL);
+  const getProbeRadiiKm = () => {
+    const maxRadius = getCityRadiusKm();
+    return [0, 0.15, 0.3, 0.5, 0.7, 1].map((ratio) => Number((maxRadius * ratio).toFixed(2)));
+  };
+
+  const getPanoramaAtPoint = (point, radius = getSearchRadiusMeters()) => new Promise((resolve) => {
     if (!streetViewServiceRef.current) return resolve(null);
     streetViewServiceRef.current.getPanorama(
       {
@@ -173,7 +167,7 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
   );
 
   const createProbePoints = (city) => {
-    const radii = [0, 2.5, 5, 8.5, 12, 16];
+    const radii = getProbeRadiiKm();
     const angleOffset = Math.random() * Math.PI * 2;
     return radii.map((radius, index) => {
       if (radius === 0) {
@@ -195,7 +189,10 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
     const lat = panorama.location.latLng.lat();
     const lng = panorama.location.latLng.lng();
     const distToCity = distanceKm(lat, lng, city.lat, city.lng);
-    const maxAllowedDistance = Math.max(CITY_RADIUS_KM + 8, 22);
+    const cityRadiusKm = getCityRadiusKm();
+    const maxAllowedDistance = mode === 'yakutsk'
+      ? Math.max(cityRadiusKm + 8, 22)
+      : Math.max(cityRadiusKm + 4, 12);
     if (distToCity > maxAllowedDistance) return null;
 
     return {
@@ -358,7 +355,7 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
       blockedPanoIds: historyPanoIds,
       blockedCityNames: historyCityNames,
       allowBlockedCities: false,
-      requestBudget: mode === 'yakutsk' ? 90 : 140,
+      requestBudget: mode === 'yakutsk' ? 60 : 90,
     });
 
     let selectedCandidates = selectRoundsFromCandidates(phaseOneCandidates, historyCityNames);
@@ -369,7 +366,7 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
         blockedPanoIds: new Set([...historyPanoIds, ...selectedPanoIds]),
         blockedCityNames: historyCityNames,
         allowBlockedCities: true,
-        requestBudget: mode === 'yakutsk' ? 70 : 120,
+        requestBudget: mode === 'yakutsk' ? 40 : 70,
       });
 
       selectedCandidates = selectRoundsFromCandidates(
@@ -410,10 +407,12 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
     setLoadingRounds(false);
   };
 
+  const getHelpRadiusKm = () => (mode === 'yakutsk' ? HELP_RADIUS_KM_YAKUTSK : HELP_RADIUS_KM_ALL);
+
   const getHelpCenter = (location) => {
     if (!location) return null;
     // Смещаем центр круга, чтобы точка не совпадала с искомой
-    const maxOffsetKm = HELP_RADIUS_KM * 0.6; // до 60% радиуса
+    const maxOffsetKm = getHelpRadiusKm() * 0.6; // ?? 60% ???????
     const r = Math.random() * maxOffsetKm;
     const angle = Math.random() * Math.PI * 2;
     const dLat = (r * Math.cos(angle)) / 111; // км -> градусы широты
@@ -427,6 +426,15 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
   const calculateDistance = (lat1, lng1, lat2, lng2) => distanceKm(lat1, lng1, lat2, lng2);
 
   const calculateScore = (distanceKm) => {
+    if (mode === 'yakutsk') {
+      if (distanceKm <= 0.3) return 5000;
+      if (distanceKm <= 1) return Math.max(0, Math.round(5000 - ((distanceKm - 0.3) * 1000)));
+      if (distanceKm <= 3) return Math.max(0, Math.round(4300 - ((distanceKm - 1) * 600)));
+      if (distanceKm <= 5) return Math.max(0, Math.round(3100 - ((distanceKm - 3) * 400)));
+      if (distanceKm <= 10) return Math.max(0, Math.round(2300 - ((distanceKm - 5) * 200)));
+      if (distanceKm <= 20) return Math.max(0, Math.round(1300 - ((distanceKm - 10) * 80)));
+      return 0;
+    }
     // Система очков как в GeoGuessr
     if (distanceKm < 1) return 5000;
     if (distanceKm < 10) return Math.round(5000 - (distanceKm * 400));
@@ -633,7 +641,7 @@ function Game({ onReset, language = 'ru', theme = 'light', timerEnabled = true, 
           }
           playSound('help');
         }}
-        helpRadiusKm={HELP_RADIUS_KM}
+        helpRadiusKm={getHelpRadiusKm()}
         helpCenter={helpCenter}
         language={language}
         mode={mode}
