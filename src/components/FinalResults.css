@@ -44,6 +44,9 @@
   font-size: 28px;
   font-weight: bold;
   margin-bottom: 20px;
+  line-height: 1.2;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .total-score {
@@ -228,4 +231,19 @@
 .share-button:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 480px) {
+  .final-results {
+    padding: 28px 16px 16px;
+  }
+
+  .final-results-content {
+    padding: 32px 24px;
+  }
+
+  .grade-text {
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
 }
