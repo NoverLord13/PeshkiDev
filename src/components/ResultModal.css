@@ -61,8 +61,8 @@
 
 .result-map {
   width: 100%;
-  height: min(63vh, 540px);
-  min-height: 345px;
+  height: min(57vh, 486px);
+  min-height: 310px;
   border-radius: 14px;
   overflow: hidden;
   margin-bottom: 18px;
@@ -130,8 +130,8 @@
 
 @media (max-width: 480px) {
   .result-map {
-    height: 57vh;
-    min-height: 330px;
+    height: 51vh;
+    min-height: 300px;
   }
 
   .result-stats {

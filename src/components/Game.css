@@ -242,14 +242,20 @@
 
   .round-info {
     min-width: 76px;
+    order: 1;
   }
 
   .score-info {
     min-width: 120px;
+    order: 2;
   }
 
   .timer-info {
     min-width: 74px;
+    order: 3;
+    width: 100%;
+    max-width: 140px;
+    margin: 0 auto;
   }
 
   .simple-guess-panel {
