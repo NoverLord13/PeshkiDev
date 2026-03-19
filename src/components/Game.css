@@ -227,35 +227,40 @@
 /* 📱 Мобильная адаптация */
 @media (max-width: 480px) {
   .game-header {
-    gap: 8px;
     top: calc(8px + env(safe-area-inset-top));
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 8px;
+    row-gap: 6px;
     justify-content: center;
+    align-items: center;
   }
 
   .round-info,
   .score-info,
   .timer-info {
-    padding: 10px 14px;
-    font-size: 15px;
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 1.1;
   }
 
   .round-info {
-    min-width: 76px;
-    order: 1;
+    min-width: 74px;
   }
 
   .score-info {
-    min-width: 120px;
-    order: 2;
+    min-width: 112px;
   }
 
   .timer-info {
-    min-width: 74px;
-    order: 3;
-    width: 100%;
-    max-width: 140px;
-    margin: 0 auto;
+    grid-column: 1 / -1;
+    justify-self: center;
+    min-width: 82px;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 7px 12px;
+    font-size: 13px;
   }
 
   .simple-guess-panel {
