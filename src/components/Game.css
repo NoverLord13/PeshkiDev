@@ -37,7 +37,7 @@
 .score-info {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  min-width: 112px;
+  min-width: 132px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -245,7 +245,7 @@
   }
 
   .score-info {
-    min-width: 96px;
+    min-width: 120px;
   }
 
   .timer-info {

@@ -19,7 +19,7 @@
   width: 100dvw;
   height: 100vh;
   height: 100dvh;
-  padding: calc(14px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+  padding: calc(14px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   border-radius: 0;
   box-shadow: none;
