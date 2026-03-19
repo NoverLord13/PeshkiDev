@@ -143,6 +143,7 @@
   color: white;
   border: none;
   padding: 18px;
+  margin-bottom: calc(12px + env(safe-area-inset-bottom));
   font-size: 20px;
   font-weight: bold;
   border-radius: 50px;
@@ -245,5 +246,9 @@
   .grade-text {
     font-size: 22px;
     margin-bottom: 16px;
+  }
+
+  .play-again-button {
+    margin-bottom: calc(18px + env(safe-area-inset-bottom));
   }
 }
