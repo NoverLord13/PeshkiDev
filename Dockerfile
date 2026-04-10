@@ -16,14 +16,14 @@ RUN npm run build:client
 
 FROM node:20-alpine AS server-build
 
-WORKDIR /app/server
+# WORKDIR /app/server
 
-COPY server/package.json server/package-lock.json ./
-RUN npm ci
+# COPY server/package.json server/package-lock.json ./
+# RUN npm ci
 
-COPY server ./
+# COPY server ./
 
-RUN npm run prisma:generate
+# RUN npm run prisma:generate
 RUN npm run build
 
 FROM node:20-alpine
@@ -31,12 +31,12 @@ FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY --from=client-build /app/dist ./dist
-COPY --from=client-build /app/api-key.txt ./dist/api-key.txt
-COPY --from=server-build /app/server/dist ./server/dist
-COPY --from=server-build /app/server/node_modules ./server/node_modules
-COPY --from=server-build /app/server/package.json ./server/package.json
-COPY --from=server-build /app/server/prisma ./server/prisma
+# COPY --from=client-build /app/dist ./dist
+# COPY --from=client-build /app/api-key.txt ./dist/api-key.txt
+# COPY --from=server-build /app/server/dist ./server/dist
+# COPY --from=server-build /app/server/node_modules ./server/node_modules
+# COPY --from=server-build /app/server/package.json ./server/package.json
+# COPY --from=server-build /app/server/prisma ./server/prisma
 
 EXPOSE 3000
 
