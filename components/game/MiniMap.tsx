@@ -9,6 +9,7 @@ import type {
   YandexPlacemark,
   YandexPolyline,
 } from "../../lib/yandexMaps.ts";
+import { useCoarsePointerUi } from "../../hooks/useCoarsePointerUi.ts";
 import { CollapseMapIcon, ExpandMapIcon } from "../icons/mapControlIcons.tsx";
 
 type MiniMapProps = {
@@ -49,9 +50,7 @@ const MiniMap = ({
   const polylineRef = useRef<YandexPolyline | null>(null);
   const clickHandlerRef = useRef<((event: YandexEvent) => void) | null>(null);
   const [hovered, setHovered] = useState(false);
-  const [isTouchPrimary, setIsTouchPrimary] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(hover: none)").matches : false
-  );
+  const isCoarsePointerUi = useCoarsePointerUi();
   const [touchGuessExpanded, setTouchGuessExpanded] = useState(false);
   const [viewportSize, setViewportSize] = useState(() => ({
     width: window.innerWidth,
@@ -66,8 +65,8 @@ const MiniMap = ({
   const startZoom = mode === "YAKUTSK" ? 10 : 3;
   const expanded =
     gameState === "RESULT" ||
-    (!isTouchPrimary && hovered) ||
-    (isTouchPrimary && gameState === "GUESSING" && touchGuessExpanded);
+    (!isCoarsePointerUi && hovered) ||
+    (isCoarsePointerUi && gameState === "GUESSING" && touchGuessExpanded);
   const collapsedSize = useMemo(
     () => ({
       width: Math.min(320, Math.max(200, viewportSize.width - 48)),
@@ -112,14 +111,6 @@ const MiniMap = ({
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(hover: none)");
-    const sync = () => setIsTouchPrimary(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
   }, []);
 
   useEffect(() => {
@@ -310,9 +301,9 @@ const MiniMap = ({
   }, [gameState, mapSize.height, mapSize.width]);
 
   const mapClass = `mini-map map-transition ${expanded ? "expanded" : ""}`;
-  const showTouchExpandMap = isTouchPrimary && gameState === "GUESSING" && !expanded;
-  const showTouchCollapseMap = isTouchPrimary && gameState === "GUESSING" && expanded;
-  const showTouchClose = isTouchPrimary && Boolean(onTouchFullDismiss);
+  const showTouchExpandMap = isCoarsePointerUi && gameState === "GUESSING" && !expanded;
+  const showTouchCollapseMap = isCoarsePointerUi && gameState === "GUESSING" && expanded;
+  const showTouchClose = isCoarsePointerUi && Boolean(onTouchFullDismiss);
 
   return (
     <div className="relative" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>

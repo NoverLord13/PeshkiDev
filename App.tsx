@@ -9,6 +9,7 @@ import {
   StreetView,
 } from "./components/index.ts";
 import { ExpandMapIcon } from "./components/icons/mapControlIcons.tsx";
+import { useCoarsePointerUi } from "./hooks/useCoarsePointerUi.ts";
 import { useGameSession } from "./hooks/useGameSession.ts";
 import { useLeaderboard } from "./hooks/useLeaderboard.ts";
 import { useYandexMaps } from "./hooks/useYandexMaps.ts";
@@ -18,9 +19,7 @@ import { LEADERBOARD_TEXT, UI_TEXT } from "./lib/uiText.ts";
 const App = () => {
   const [language, setLanguage] = useState<Language>("ru");
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [isTouchUi, setIsTouchUi] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(hover: none)").matches : false
-  );
+  const isCoarsePointerUi = useCoarsePointerUi();
   const [mobileMinimapDismissed, setMobileMinimapDismissed] = useState(false);
   const prevGameStateRef = useRef<GameState | null>(null);
 
@@ -82,14 +81,6 @@ const App = () => {
   }, [syncLoadingMessage]);
 
   useEffect(() => {
-    const mq = window.matchMedia("(hover: none)");
-    const sync = () => setIsTouchUi(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-
-  useEffect(() => {
     if (!gameMode) {
       setMobileMinimapDismissed(false);
       prevGameStateRef.current = null;
@@ -97,7 +88,7 @@ const App = () => {
   }, [gameMode]);
 
   useEffect(() => {
-    if (!isTouchUi) {
+    if (!isCoarsePointerUi) {
       prevGameStateRef.current = gameState;
       return;
     }
@@ -108,7 +99,7 @@ const App = () => {
       setMobileMinimapDismissed(false);
     }
     prevGameStateRef.current = gameState;
-  }, [gameState, isTouchUi]);
+  }, [gameState, isCoarsePointerUi]);
 
   useEffect(() => {
     if (gameState === "FINAL_RESULT" && gameMode) {
@@ -164,7 +155,7 @@ const App = () => {
       <AppHeader uiText={t} gameMode={gameMode} gameState={gameState} currentRound={currentRound} totalXP={totalXP} />
 
       <div className="absolute bottom-6 left-6 z-30 flex flex-col items-start gap-3">
-        {gameMode && ymapsApi && isTouchUi && mobileMinimapDismissed && (
+        {gameMode && ymapsApi && isCoarsePointerUi && mobileMinimapDismissed && (
           <button
             type="button"
             aria-label={t.expandMap}
@@ -211,7 +202,7 @@ const App = () => {
         />
       )}
 
-      <main className="h-full w-full">
+      <main className="relative z-0 h-full w-full">
         {ymapsApi && targetLocation && (
           <StreetView ymaps={ymapsApi} location={targetLocation} panorama={targetPanorama} />
         )}
@@ -221,8 +212,8 @@ const App = () => {
       </main>
 
       {gameMode && ymapsApi && (
-        <div className="absolute bottom-6 right-6 z-30 flex flex-col items-end gap-3">
-          <div className={gameState === "RESULT" ? "visible" : "hidden"}>
+        <div className="pointer-events-none absolute bottom-6 right-6 z-30 flex flex-col items-end gap-3">
+          <div className={gameState === "RESULT" ? "pointer-events-auto visible" : "hidden"}>
             <ResultPanel
               uiText={t}
               distance={distance}
@@ -233,22 +224,24 @@ const App = () => {
             />
           </div>
 
-          {(!isTouchUi || !mobileMinimapDismissed) && (
-            <MiniMap
-              ymaps={ymapsApi}
-              mode={gameMode}
-              targetLocation={targetLocation}
-              guessLocation={guessLocation}
-              gameState={gameState}
-              onGuess={setGuessLocation}
-              onConfirm={confirmGuess}
-              confirmDisabled={!guessLocation || gameState !== "GUESSING"}
-              confirmLabel={t.confirm}
-              expandMapLabel={t.expandMap}
-              collapseMapLabel={t.collapseMap}
-              closeMapLabel={t.closeMap}
-              onTouchFullDismiss={isTouchUi ? () => setMobileMinimapDismissed(true) : undefined}
-            />
+          {(!isCoarsePointerUi || !mobileMinimapDismissed) && (
+            <div className="pointer-events-auto">
+              <MiniMap
+                ymaps={ymapsApi}
+                mode={gameMode}
+                targetLocation={targetLocation}
+                guessLocation={guessLocation}
+                gameState={gameState}
+                onGuess={setGuessLocation}
+                onConfirm={confirmGuess}
+                confirmDisabled={!guessLocation || gameState !== "GUESSING"}
+                confirmLabel={t.confirm}
+                expandMapLabel={t.expandMap}
+                collapseMapLabel={t.collapseMap}
+                closeMapLabel={t.closeMap}
+                onTouchFullDismiss={isCoarsePointerUi ? () => setMobileMinimapDismissed(true) : undefined}
+              />
+            </div>
           )}
         </div>
       )}

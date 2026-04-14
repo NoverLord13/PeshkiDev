@@ -96,7 +96,7 @@ const StreetView = ({ ymaps, location, panorama, hidden = false }: StreetViewPro
   }, [location.lat, location.lng, panorama, ymaps]);
 
   return (
-    <div className={wrapperClassName} aria-hidden={hidden}>
+    <div className={`${wrapperClassName} touch-none`} aria-hidden={hidden}>
       <div ref={containerRef} className="h-full w-full" />
     </div>
   );
