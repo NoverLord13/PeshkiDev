@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { haversineKm, scoreFromDistance } from "../lib/mapUtils.ts";
 import type { GameMode } from "../lib/gameTypes.ts";
 import type { MainUiText } from "../lib/uiText.ts";
-import type { PlacesService, StreetViewService } from "../lib/yandexMaps.ts";
+import type { StreetViewService } from "../lib/yandexMaps.ts";
 import { useGameProgress } from "./game/useGameProgress.ts";
 import { useRoundGeneration } from "./game/useRoundGeneration.ts";
 import { useShareResults } from "./game/useShareResults.ts";
@@ -11,17 +11,15 @@ export type { RoundSummary } from "./game/types.ts";
 type UseGameSessionOptions = {
   uiText: MainUiText;
   streetViewService: StreetViewService | null;
-  placesService: PlacesService | null;
   setExternalError: (value: string | null) => void;
 };
 
-export const useGameSession = ({ uiText, streetViewService, placesService, setExternalError }: UseGameSessionOptions) => {
+export const useGameSession = ({ uiText, streetViewService, setExternalError }: UseGameSessionOptions) => {
   const progress = useGameProgress(uiText);
 
   const { startNewRound } = useRoundGeneration({
     uiText,
     streetViewService,
-    placesService,
     setExternalError,
     resetRoundState: progress.resetRoundState,
     setShareFeedback: progress.setShareFeedback,
@@ -44,14 +42,14 @@ export const useGameSession = ({ uiText, streetViewService, placesService, setEx
 
   const startGame = useCallback(
     (mode: GameMode) => {
-      if (!streetViewService || !placesService) {
+      if (!streetViewService) {
         return;
       }
 
       progress.beginGame(mode);
-      void startNewRound(mode);
+      void startNewRound(mode, 1);
     },
-    [placesService, progress, startNewRound, streetViewService]
+    [progress, startNewRound, streetViewService]
   );
 
   const confirmGuess = useCallback(() => {
@@ -75,8 +73,9 @@ export const useGameSession = ({ uiText, streetViewService, placesService, setEx
       return;
     }
 
-    progress.setCurrentRound((prev) => prev + 1);
-    void startNewRound(progress.gameMode);
+    const nextRound = progress.currentRound + 1;
+    progress.setCurrentRound(nextRound);
+    void startNewRound(progress.gameMode, nextRound);
   }, [progress, startNewRound]);
 
   const showFinalResults = useCallback(() => {

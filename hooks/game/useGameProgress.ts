@@ -18,6 +18,7 @@ export const useGameProgress = (uiText: MainUiText) => {
   const [roundHistory, setRoundHistory] = useState<RoundSummary[]>([]);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
   const [loadingMessage, setLoadingMessage] = useState<string>(uiText.loadingMap);
+  const [roundError, setRoundError] = useState<string | null>(null);
 
   const isFinalRound = currentRound >= TOTAL_ROUNDS;
   const averageScore = useMemo(
@@ -51,6 +52,7 @@ export const useGameProgress = (uiText: MainUiText) => {
     setRoundHistory([]);
     setTotalXP(0);
     setShareFeedback(null);
+    setRoundError(null);
     resetRoundState();
   }, [resetRoundState]);
 
@@ -61,6 +63,7 @@ export const useGameProgress = (uiText: MainUiText) => {
     setDistance(null);
     setScore(0);
     setShareFeedback(null);
+    setRoundError(null);
     setGameMode(mode);
   }, []);
 
@@ -75,10 +78,10 @@ export const useGameProgress = (uiText: MainUiText) => {
   }, []);
 
   const syncLoadingMessage = useCallback(() => {
-    if (gameState === "LOADING_RESULT" && !targetLocation) {
+    if (gameState === "LOADING_RESULT" && !targetLocation && !roundError) {
       setLoadingMessage(uiText.loadingRound);
     }
-  }, [gameState, targetLocation, uiText.loadingRound]);
+  }, [gameState, targetLocation, roundError, uiText.loadingRound]);
 
   return {
     gameMode,
@@ -93,6 +96,7 @@ export const useGameProgress = (uiText: MainUiText) => {
     roundHistory,
     shareFeedback,
     loadingMessage,
+    roundError,
     isFinalRound,
     averageScore,
     totalDistance,
@@ -108,6 +112,7 @@ export const useGameProgress = (uiText: MainUiText) => {
     setRoundHistory,
     setShareFeedback,
     setLoadingMessage,
+    setRoundError,
     resetRoundState,
     resetSession,
     beginGame,

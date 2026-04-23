@@ -16,15 +16,11 @@ export type Bounds = {
   maxLng: number;
 };
 
-export type PlaceResult = {
-  name: string;
-  types: string[];
-};
-
 export type SeedLocation = {
   lat: number;
   lng: number;
   radiusMeters: number;
+  weight?: number;
 };
 
 export type GeneratedRound = {

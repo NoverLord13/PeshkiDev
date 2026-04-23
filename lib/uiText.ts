@@ -38,6 +38,7 @@ export type MainUiText = {
   shareSuccess: string;
   playAgain: string;
   error: string;
+  errorBackToMenu: string;
 };
 
 export type LeaderboardUiText = {
@@ -93,6 +94,7 @@ export const UI_TEXT: Record<Language, MainUiText> = {
     shareSuccess: "Копировать результат",
     playAgain: "Сыграть снова",
     error: "Ошибка",
+    errorBackToMenu: "К выбору режима",
   },
   sah: {
     title: "FREEGUESSR - САХА",
@@ -132,6 +134,7 @@ export const UI_TEXT: Record<Language, MainUiText> = {
     shareSuccess: "Куоппуйаламмыт",
     playAgain: "Өссө төгүл оонньоо",
     error: "Алҕас",
+    errorBackToMenu: "Режим сонорго",
   },
 };
 

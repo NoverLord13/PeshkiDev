@@ -1,5 +1,4 @@
 import {
-  ALLOWED_PLACE_TYPES,
   BOUNDS_BY_MODE,
   SAKHA_LOCATION_SEEDS,
   YAKUTSK_LOCATION_SEEDS,
@@ -82,39 +81,51 @@ const randomLatLngNearSeed = (seed: SeedLocation, bounds: Bounds): LatLng => {
   };
 };
 
-export const generateCandidateLocation = (mode: GameMode, bounds: Bounds) => {
+const pickWeightedSeed = (seeds: readonly SeedLocation[]): SeedLocation => {
+  const totalWeight = seeds.reduce((sum, seed) => sum + (seed.weight ?? 1), 0);
+  if (totalWeight <= 0) {
+    return seeds[Math.floor(Math.random() * seeds.length)];
+  }
+
+  let roll = Math.random() * totalWeight;
+  for (const seed of seeds) {
+    roll -= seed.weight ?? 1;
+    if (roll <= 0) {
+      return seed;
+    }
+  }
+
+  return seeds[seeds.length - 1];
+};
+
+export type GenerateCandidateOptions = {
+  /** Фиксированный индекс из SAKHA_LOCATION_SEEDS — один НП на раунд, без повторов в сессии. */
+  sakhaSeedIndex?: number;
+};
+
+export const buildShuffledIndexOrder = (length: number): number[] => {
+  const order = Array.from({ length }, (_, i) => i);
+  for (let i = order.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return order;
+};
+
+export const generateCandidateLocation = (mode: GameMode, bounds: Bounds, options?: GenerateCandidateOptions) => {
   if (mode === "SAKHA") {
-    const seed = SAKHA_LOCATION_SEEDS[Math.floor(Math.random() * SAKHA_LOCATION_SEEDS.length)];
-    return randomLatLngNearSeed(seed, bounds);
+    const fixed = options?.sakhaSeedIndex;
+    if (typeof fixed === "number" && fixed >= 0 && fixed < SAKHA_LOCATION_SEEDS.length) {
+      return randomLatLngNearSeed(SAKHA_LOCATION_SEEDS[fixed], bounds);
+    }
+    return randomLatLngNearSeed(pickWeightedSeed(SAKHA_LOCATION_SEEDS), bounds);
   }
 
   if (mode === "YAKUTSK") {
-    const seed = YAKUTSK_LOCATION_SEEDS[Math.floor(Math.random() * YAKUTSK_LOCATION_SEEDS.length)];
-    return randomLatLngNearSeed(seed, bounds);
+    return randomLatLngNearSeed(pickWeightedSeed(YAKUTSK_LOCATION_SEEDS), bounds);
   }
 
   return randomLatLngInBounds(bounds);
 };
-
-const mapYandexKindToTypes = (kind: string | undefined): string[] => {
-  switch (kind) {
-    case "locality":
-      return ["locality", "political"];
-    case "district":
-      return ["sublocality", "neighborhood", "administrative_area_level_3", "political"];
-    case "area":
-      return ["administrative_area_level_3", "political"];
-    case "province":
-      return ["administrative_area_level_1", "political"];
-    case "country":
-      return ["country", "political"];
-    default:
-      return [];
-  }
-};
-
-export const getPlaceTypesFromYandexKind = (kind: string | undefined) => mapYandexKindToTypes(kind);
-
-export const isAllowedPopulatedPlace = (types: string[]) => types.some((type) => ALLOWED_PLACE_TYPES.has(type));
 
 export const getBoundsForMode = (mode: GameMode) => BOUNDS_BY_MODE[mode];

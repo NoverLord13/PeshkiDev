@@ -1,5 +1,4 @@
-import type { LatLng, PlaceResult } from "./gameTypes.ts";
-import { getPlaceTypesFromYandexKind, metersToDelta } from "./mapUtils.ts";
+import type { LatLng } from "./gameTypes.ts";
 import type { YandexGeoObject, YandexGeocoderMetaData, YandexMapsApi } from "./yandexMapsTypes.ts";
 
 export type {
@@ -22,17 +21,27 @@ declare global {
 }
 
 const YANDEX_MAPS_URL = "https://api-maps.yandex.ru/2.1/?lang=ru_RU";
+const YANDEX_SCRIPT_STATUS_ATTR = "data-yandex-maps-status";
+const YANDEX_LOAD_ERROR_MESSAGE = "Yandex Maps failed to load";
+
+let yandexMapsLoadPromise: Promise<YandexMapsApi> | null = null;
 
 export class StreetViewService {
   constructor(private readonly ymaps: YandexMapsApi) {}
 
-  async getPanorama(request: { location: LatLng; radius: number; source: "OUTDOOR" }) {
-    const panoramas = await this.ymaps.panorama.locate([request.location.lat, request.location.lng], {
-      radius: request.radius,
+  /** Сырой список панорам (ближние первыми). Нужен, чтобы не застревать на одной и той же `panoramas[0]`. */
+  async locatePanoramasNear(location: LatLng, radiusMeters: number) {
+    const panoramas = await this.ymaps.panorama.locate([location.lat, location.lng], {
+      radius: radiusMeters,
       layer: "yandex#panorama",
     });
+    return panoramas && panoramas.length > 0 ? panoramas : [];
+  }
 
-    if (!panoramas || panoramas.length === 0) {
+  async getPanorama(request: { location: LatLng; radius: number; source: "OUTDOOR" }) {
+    const panoramas = await this.locatePanoramasNear(request.location, request.radius);
+
+    if (panoramas.length === 0) {
       return { status: "ZERO_RESULTS" as const };
     }
 
@@ -44,54 +53,6 @@ export class StreetViewService {
       location: { lat: position[0], lng: position[1] },
       panorama,
     };
-  }
-}
-
-export class PlacesService {
-  private readonly nearbyCache = new Map<string, { results: PlaceResult[]; status: "OK" | "ZERO_RESULTS" }>();
-
-  constructor(private readonly ymaps: YandexMapsApi) {}
-
-  async nearbySearch(request: { location: LatLng; radius: number }) {
-    const cacheKey = [
-      request.location.lat.toFixed(4),
-      request.location.lng.toFixed(4),
-      Math.round(request.radius),
-    ].join(":");
-
-    const cached = this.nearbyCache.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    const { deltaLat, deltaLng } = metersToDelta(request.radius, request.location.lat);
-    const bbox: [[number, number], [number, number]] = [
-      [request.location.lat - deltaLat, request.location.lng - deltaLng],
-      [request.location.lat + deltaLat, request.location.lng + deltaLng],
-    ];
-
-    const geocodeResponse = await this.ymaps.geocode([request.location.lat, request.location.lng], {
-      results: 10,
-      bbox,
-      rspn: 1,
-    });
-
-    const results: PlaceResult[] = [];
-    geocodeResponse.geoObjects.each((geoObject: YandexGeoObject) => {
-      const meta = geoObject.properties.get("metaDataProperty.GeocoderMetaData") as YandexGeocoderMetaData | undefined;
-      const kind = meta?.kind;
-      const name = meta?.text || (geoObject.properties.get("name") as string | undefined) || "";
-      const types = getPlaceTypesFromYandexKind(kind);
-      results.push({ name, types });
-    });
-
-    const response = {
-      results,
-      status: results.length > 0 ? ("OK" as const) : ("ZERO_RESULTS" as const),
-    };
-
-    this.nearbyCache.set(cacheKey, response);
-    return response;
   }
 }
 
@@ -160,21 +121,73 @@ export const loadYandexMaps = async () => {
   const apiKey = await getYandexMapsApiKey();
   const scriptSrc = `${YANDEX_MAPS_URL}&apikey=${encodeURIComponent(apiKey)}`;
 
-  return new Promise<YandexMapsApi>((resolve, reject) => {
-    const existing = document.querySelector(`script[src="${scriptSrc}"]`) as HTMLScriptElement | null;
-    if (existing) {
-      existing.addEventListener("load", () => window.ymaps?.ready(() => resolve(window.ymaps as YandexMapsApi)));
-      existing.addEventListener("error", () => reject(new Error("Yandex Maps failed to load")));
-      return;
+  if (yandexMapsLoadPromise) {
+    return yandexMapsLoadPromise;
+  }
+
+  const waitForReady = () =>
+    new Promise<YandexMapsApi>((resolve, reject) => {
+      if (!window.ymaps) {
+        reject(new Error(YANDEX_LOAD_ERROR_MESSAGE));
+        return;
+      }
+
+      window.ymaps.ready(() => resolve(window.ymaps as YandexMapsApi));
+    });
+
+  const attachToScript = (script: HTMLScriptElement) =>
+    new Promise<YandexMapsApi>((resolve, reject) => {
+      const cleanup = () => {
+        script.removeEventListener("load", handleLoad);
+        script.removeEventListener("error", handleError);
+      };
+
+      const handleLoad = () => {
+        script.setAttribute(YANDEX_SCRIPT_STATUS_ATTR, "loaded");
+        cleanup();
+        void waitForReady().then(resolve, reject);
+      };
+
+      const handleError = () => {
+        script.setAttribute(YANDEX_SCRIPT_STATUS_ATTR, "error");
+        cleanup();
+        script.remove();
+        reject(new Error(YANDEX_LOAD_ERROR_MESSAGE));
+      };
+
+      const status = script.getAttribute(YANDEX_SCRIPT_STATUS_ATTR);
+      if (status === "loaded") {
+        handleLoad();
+        return;
+      }
+
+      if (status === "error") {
+        script.remove();
+      }
+
+      script.addEventListener("load", handleLoad, { once: true });
+      script.addEventListener("error", handleError, { once: true });
+    });
+
+  yandexMapsLoadPromise = (async () => {
+    let script = document.querySelector(`script[src="${scriptSrc}"]`) as HTMLScriptElement | null;
+    if (!script) {
+      script = document.createElement("script");
+      script.src = scriptSrc;
+      script.async = true;
+      script.setAttribute(YANDEX_SCRIPT_STATUS_ATTR, "loading");
+      document.head.appendChild(script);
     }
 
-    const script = document.createElement("script");
-    script.src = scriptSrc;
-    script.async = true;
-    script.onload = () => window.ymaps?.ready(() => resolve(window.ymaps as YandexMapsApi));
-    script.onerror = () => reject(new Error("Yandex Maps failed to load"));
-    document.head.appendChild(script);
-  });
+    return attachToScript(script);
+  })();
+
+  try {
+    return await yandexMapsLoadPromise;
+  } catch (error) {
+    yandexMapsLoadPromise = null;
+    throw error;
+  }
 };
 
 export const extractAdminLevel1 = (geocodeResult: YandexGeoObject | null | undefined) => {

@@ -26,7 +26,7 @@ const App = () => {
   const t = UI_TEXT[language];
   const leaderboardText = LEADERBOARD_TEXT[language];
 
-  const { ymapsApi, streetViewService, placesService, isMapReady, error, setError } = useYandexMaps(t.error);
+  const { ymapsApi, streetViewService, isMapReady, error, setError } = useYandexMaps(t.error);
   const {
     gameMode,
     gameState,
@@ -55,7 +55,6 @@ const App = () => {
   } = useGameSession({
     uiText: t,
     streetViewService,
-    placesService,
     setExternalError: setError,
   });
   const {
@@ -139,19 +138,17 @@ const App = () => {
     resetLeaderboardState();
   };
 
-  if (error) {
-    return (
-      <div className="flex h-full items-center justify-center p-6">
-        <div className="glass-panel rounded-2xl px-6 py-4 text-white shadow-xl">
-          <div className="text-lg font-semibold">{t.error}</div>
-          <div className="mt-2 text-sm opacity-80">{error}</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="relative h-full w-full">
+      {error && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/90 p-6">
+          <div className="glass-panel rounded-2xl px-6 py-4 text-white shadow-xl">
+            <div className="text-lg font-semibold">{t.error}</div>
+            <div className="mt-2 text-sm opacity-80">{error}</div>
+          </div>
+        </div>
+      )}
+
       <AppHeader uiText={t} gameMode={gameMode} gameState={gameState} currentRound={currentRound} totalXP={totalXP} />
 
       <div className="absolute bottom-6 left-6 z-30 flex flex-col items-start gap-3">

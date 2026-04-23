@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getErrorMessage } from "../lib/errors.ts";
-import { loadYandexMaps, PlacesService, StreetViewService, type YandexMapsApi } from "../lib/yandexMaps.ts";
+import { loadYandexMaps, StreetViewService, type YandexMapsApi } from "../lib/yandexMaps.ts";
 
 export const useYandexMaps = (fallbackErrorMessage: string) => {
   const [ymapsApi, setYmapsApi] = useState<YandexMapsApi | null>(null);
@@ -12,6 +12,7 @@ export const useYandexMaps = (fallbackErrorMessage: string) => {
     loadYandexMaps()
       .then((api) => {
         if (mounted) {
+          setError(null);
           setYmapsApi(api);
         }
       })
@@ -27,13 +28,11 @@ export const useYandexMaps = (fallbackErrorMessage: string) => {
   }, [fallbackErrorMessage]);
 
   const streetViewService = useMemo(() => (ymapsApi ? new StreetViewService(ymapsApi) : null), [ymapsApi]);
-  const placesService = useMemo(() => (ymapsApi ? new PlacesService(ymapsApi) : null), [ymapsApi]);
 
   return {
     ymapsApi,
     streetViewService,
-    placesService,
-    isMapReady: Boolean(ymapsApi && streetViewService && placesService),
+    isMapReady: Boolean(ymapsApi && streetViewService),
     error,
     setError,
   };

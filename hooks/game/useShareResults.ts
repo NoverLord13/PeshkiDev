@@ -46,8 +46,8 @@ export const useShareResults = ({
   bestRound,
   uiText,
   setShareFeedback,
-}: ShareOptions) =>
-  useCallback(async () => {
+}: ShareOptions) => {
+  return useCallback(async () => {
     if (!gameMode || roundHistory.length === 0) {
       return;
     }
@@ -85,3 +85,4 @@ export const useShareResults = ({
       }
     }
   }, [averageScore, bestRound, gameMode, roundHistory, setShareFeedback, totalDistance, totalXP, uiText]);
+};
