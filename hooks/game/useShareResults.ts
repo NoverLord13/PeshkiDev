@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { APP_TITLE } from "../../lib/appConfig.ts";
+import { APP_SITE_URL, APP_TITLE } from "../../lib/appConfig.ts";
 import { TOTAL_ROUNDS } from "../../lib/gameConstants.ts";
 import type { GameMode } from "../../lib/gameTypes.ts";
 import type { MainUiText } from "../../lib/uiText.ts";
@@ -24,18 +24,24 @@ const buildShareText = ({
   totalDistance,
   bestRound,
   uiText,
-}: Omit<ShareOptions, "setShareFeedback">) =>
-  [
+}: Omit<ShareOptions, "setShareFeedback">) => {
+  const stats = [
     APP_TITLE,
     `${uiText.finalResults}: ${totalXP} XP`,
     `${uiText.roundsComplete}: ${roundHistory.length}/${TOTAL_ROUNDS}`,
     `${uiText.averageScore}: ${averageScore}`,
     `${uiText.totalDistance}: ${totalDistance.toFixed(2)} km`,
-    bestRound ? `${uiText.bestRound}: #${bestRound.roundNumber} (${bestRound.score})` : "",
-    gameMode ? `Mode: ${gameMode}` : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  ];
+
+  if (bestRound) {
+    stats.push(`${uiText.bestRound}: #${bestRound.roundNumber} (${bestRound.score})`);
+  }
+  if (gameMode) {
+    stats.push(`Mode: ${gameMode}`);
+  }
+
+  return [...stats, "", `${uiText.sharePlayCta}: ${APP_SITE_URL}`].join("\n");
+};
 
 export const useShareResults = ({
   gameMode,

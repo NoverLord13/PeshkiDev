@@ -36,6 +36,7 @@ export type MainUiText = {
   bestRound: string;
   shareResult: string;
   shareSuccess: string;
+  sharePlayCta: string;
   playAgain: string;
   error: string;
   errorBackToMenu: string;
@@ -92,6 +93,7 @@ export const UI_TEXT: Record<Language, MainUiText> = {
     bestRound: "Лучший раунд",
     shareResult: "Поделиться результатом",
     shareSuccess: "Копировать результат",
+    sharePlayCta: "Играйте в Sakhaguessr",
     playAgain: "Сыграть снова",
     error: "Ошибка",
     errorBackToMenu: "К выбору режима",
@@ -109,17 +111,17 @@ export const UI_TEXT: Record<Language, MainUiText> = {
     loadingMap: "Яндекс Карталар хачайдана турар...",
     loadingRound: "Хачайдана турар...",
     checkingResult: "Түмүк бэрэбиэркэтэ...",
-    settings: "Туруоруулар",
+    settings: "Настройкалар",
     language: "Тыл",
-    russian: "Нуучча",
-    yakut: "Саха",
+    russian: "Русский язык",
+    yakut: "Саха тыла",
     contact: "Биһиэхэ суруй",
     correctRegion: "СӨП РЕГИОН",
-    wrongRegion: "САТААБАТ РЕГИОН",
+    wrongRegion: "СЫЫҺА РЕГИОН",
     region: "Регион",
-    distance: "Ыраахтааһын",
+    distance: "Дистанция",
     score: "Баал",
-    nextRound: "Аныгы раунд (Space)",
+    nextRound: "Аныгыскы раунд (Space)",
     finishGame: "Түмүк",
     confirm: "ЭППИЭТИН БИГЭЛЭЭ",
     expandMap: "Картаны улаатыннар",
@@ -132,6 +134,7 @@ export const UI_TEXT: Record<Language, MainUiText> = {
     bestRound: "Саамай үчүгэй раунд",
     shareResult: "Түмүгү үллэстии",
     shareSuccess: "Куоппуйаламмыт",
+    sharePlayCta: "Sakhaguessr оонньоҥ",
     playAgain: "Өссө төгүл оонньоо",
     error: "Алҕас",
     errorBackToMenu: "Режим сонорго",
@@ -153,7 +156,7 @@ export const LEADERBOARD_TEXT: Record<Language, LeaderboardUiText> = {
     saveResultSuccess: "Результат сохранен",
   },
   sah: {
-    playerNamePlaceholder: "Ваше имя",
+    playerNamePlaceholder: "Эһиги ааккыт",
     saveResult: "Сохранить результат",
     savingResult: "Сохранение...",
     resultSaved: "Сохранено",
