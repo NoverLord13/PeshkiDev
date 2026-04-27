@@ -7,7 +7,7 @@ import type { RoundSummary } from "./types.ts";
 
 export const useGameProgress = (uiText: MainUiText) => {
   const [gameMode, setGameMode] = useState<GameMode | null>(null);
-  const [gameState, setGameState] = useState<GameState>("LOADING_RESULT");
+  const [gameState, setGameState] = useState<GameState>("IDLE");
   const [targetLocation, setTargetLocation] = useState<LatLng | null>(null);
   const [targetPanorama, setTargetPanorama] = useState<YandexPanorama | null>(null);
   const [guessLocation, setGuessLocation] = useState<LatLng | null>(null);
@@ -47,7 +47,7 @@ export const useGameProgress = (uiText: MainUiText) => {
 
   const resetSession = useCallback(() => {
     setGameMode(null);
-    setGameState("LOADING_RESULT");
+    setGameState("IDLE");
     setCurrentRound(1);
     setRoundHistory([]);
     setTotalXP(0);

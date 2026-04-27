@@ -5,6 +5,7 @@ import {
   MiniMap,
   ResultPanel,
   SettingsPanel,
+  StartOverlay,
   StreetView,
 } from "./components/index.ts";
 import { ExpandMapIcon } from "./components/icons/mapControlIcons.tsx";
@@ -123,12 +124,14 @@ const App = () => {
     return () => window.removeEventListener("keydown", handleKey);
   }, [gameState, goToNextRound, isFinalRound, showFinalResults]);
 
-  useEffect(() => {
-    if (isMapReady && !gameMode) {
-      resetLeaderboardState();
-      startGame();
+  const handleStart = () => {
+    if (!isMapReady) {
+      return;
     }
-  }, [gameMode, isMapReady, resetLeaderboardState, startGame]);
+
+    resetLeaderboardState();
+    startGame();
+  };
 
   const handlePlayAgain = () => {
     resetSession();
@@ -167,6 +170,10 @@ const App = () => {
           onSelectLanguage={setLanguage}
         />
       </div>
+
+      {gameState === "IDLE" && (
+        <StartOverlay uiText={t} isMapReady={isMapReady} onStart={handleStart} />
+      )}
 
       {gameState === "FINAL_RESULT" && (
         <FinalResultsOverlay

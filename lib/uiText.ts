@@ -6,6 +6,7 @@ export type MainUiText = {
   streak: string;
   round: string;
   roundsShort: string;
+  startGame: string;
   loadingMap: string;
   loadingRound: string;
   checkingResult: string;
@@ -58,6 +59,7 @@ export const UI_TEXT: Record<Language, MainUiText> = {
     streak: "Стрик",
     round: "Раунд",
     roundsShort: "из",
+    startGame: "Начать игру",
     loadingMap: "Загрузка Яндекс Карт...",
     loadingRound: "Загрузка...",
     checkingResult: "Проверка результата...",
@@ -94,6 +96,7 @@ export const UI_TEXT: Record<Language, MainUiText> = {
     streak: "Стрик",
     round: "Раунд",
     roundsShort: "",
+    startGame: "Оонньууну саҕалаа",
     loadingMap: "Яндекс Карталар хачайдана турар...",
     loadingRound: "Хачайдана турар...",
     checkingResult: "Түмүк бэрэбиэркэтэ...",

@@ -1,7 +1,7 @@
 import type { YandexPanorama } from "./yandexMapsTypes.ts";
 
 export type GameMode = "YAKUTSK";
-export type GameState = "LOADING_RESULT" | "GUESSING" | "RESULT" | "FINAL_RESULT";
+export type GameState = "IDLE" | "LOADING_RESULT" | "GUESSING" | "RESULT" | "FINAL_RESULT";
 export type Language = "ru" | "sah";
 
 export type LatLng = {
