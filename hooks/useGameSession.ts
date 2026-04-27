@@ -1,12 +1,13 @@
 import { useCallback } from "react";
 import { haversineKm, scoreFromDistance } from "../lib/mapUtils.ts";
-import type { GameMode } from "../lib/gameTypes.ts";
 import type { MainUiText } from "../lib/uiText.ts";
 import type { StreetViewService } from "../lib/yandexMaps.ts";
 import { useGameProgress } from "./game/useGameProgress.ts";
 import { useRoundGeneration } from "./game/useRoundGeneration.ts";
 import { useShareResults } from "./game/useShareResults.ts";
 export type { RoundSummary } from "./game/types.ts";
+
+const DEFAULT_GAME_MODE = "YAKUTSK" as const;
 
 type UseGameSessionOptions = {
   uiText: MainUiText;
@@ -40,17 +41,14 @@ export const useGameSession = ({ uiText, streetViewService, setExternalError }: 
     setShareFeedback: progress.setShareFeedback,
   });
 
-  const startGame = useCallback(
-    (mode: GameMode) => {
-      if (!streetViewService) {
-        return;
-      }
+  const startGame = useCallback(() => {
+    if (!streetViewService) {
+      return;
+    }
 
-      progress.beginGame(mode);
-      void startNewRound(mode, 1);
-    },
-    [progress, startNewRound, streetViewService]
-  );
+    progress.beginGame(DEFAULT_GAME_MODE);
+    void startNewRound(DEFAULT_GAME_MODE, 1);
+  }, [progress, startNewRound, streetViewService]);
 
   const confirmGuess = useCallback(() => {
     if (!progress.guessLocation || !progress.targetLocation || !progress.gameMode) {

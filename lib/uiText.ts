@@ -6,10 +6,6 @@ export type MainUiText = {
   streak: string;
   round: string;
   roundsShort: string;
-  chooseMode: string;
-  chooseModeDescription: string;
-  yakutskOnly: string;
-  allSakha: string;
   loadingMap: string;
   loadingRound: string;
   checkingResult: string;
@@ -39,7 +35,6 @@ export type MainUiText = {
   sharePlayCta: string;
   playAgain: string;
   error: string;
-  errorBackToMenu: string;
 };
 
 export type LeaderboardUiText = {
@@ -63,10 +58,6 @@ export const UI_TEXT: Record<Language, MainUiText> = {
     streak: "Стрик",
     round: "Раунд",
     roundsShort: "из",
-    chooseMode: "Выберите режим",
-    chooseModeDescription: "Игровые локации подбираются внутри населенных пунктов и в пределах выбранной территории.",
-    yakutskOnly: "Только Якутск",
-    allSakha: "Вся Республика Саха (Якутия)",
     loadingMap: "Загрузка Яндекс Карт...",
     loadingRound: "Загрузка...",
     checkingResult: "Проверка результата...",
@@ -96,7 +87,6 @@ export const UI_TEXT: Record<Language, MainUiText> = {
     sharePlayCta: "Играйте в Sakhaguessr",
     playAgain: "Сыграть снова",
     error: "Ошибка",
-    errorBackToMenu: "К выбору режима",
   },
   sah: {
     title: "FREEGUESSR - САХА",
@@ -104,10 +94,6 @@ export const UI_TEXT: Record<Language, MainUiText> = {
     streak: "Стрик",
     round: "Раунд",
     roundsShort: "",
-    chooseMode: "Режим тал",
-    chooseModeDescription: "Оонньуу сирдэрэ нэһилиэктэр иһигэр уонна талыыллыбыт сир арыллыытыгар булуллаллар.",
-    yakutskOnly: "Якутскай эрэ",
-    allSakha: "Бүтүн Саха Өрөспүүбүлүкэтэ",
     loadingMap: "Яндекс Карталар хачайдана турар...",
     loadingRound: "Хачайдана турар...",
     checkingResult: "Түмүк бэрэбиэркэтэ...",
@@ -134,10 +120,9 @@ export const UI_TEXT: Record<Language, MainUiText> = {
     bestRound: "Саамай үчүгэй раунд",
     shareResult: "Түмүгү үллэстии",
     shareSuccess: "Куоппуйаламмыт",
-    sharePlayCta: "Sakhaguessr оонньоҥ",
+    sharePlayCta: "Sakhaguessr-га оонньоҥ",
     playAgain: "Өссө төгүл оонньоо",
     error: "Алҕас",
-    errorBackToMenu: "Режим сонорго",
   },
 };
 

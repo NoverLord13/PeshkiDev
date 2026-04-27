@@ -1,16 +1,5 @@
-import {
-  BOUNDS_BY_MODE,
-  SAKHA_LOCATION_SEEDS,
-  YAKUTSK_LOCATION_SEEDS,
-} from "./gameConstants.ts";
+import { BOUNDS_BY_MODE, YAKUTSK_LOCATION_SEEDS } from "./gameConstants.ts";
 import type { Bounds, GameMode, LatLng, SeedLocation } from "./gameTypes.ts";
-
-const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-const randomLatLngInBounds = (bounds: Bounds): LatLng => ({
-  lat: randomInRange(bounds.minLat, bounds.maxLat),
-  lng: randomInRange(bounds.minLng, bounds.maxLng),
-});
 
 const normalizeRegionName = (value: string | null | undefined) =>
   (value ?? "")
@@ -46,10 +35,8 @@ export const haversineKm = (a: LatLng, b: LatLng) => {
 const MAX_SCORE = 5000;
 
 const SCORE_HALF_DISTANCE_KM: Record<GameMode, number> = {
-  // Inside Yakutsk even a few kilometers is a meaningful miss, so the curve is much steeper.
+  // Inside Yakutsk and its suburbs even a few kilometers is a meaningful miss.
   YAKUTSK: 2.5,
-  // Keep Sakha close to the previous pacing for large-scale rounds.
-  SAKHA: 275,
 };
 
 export const scoreFromDistance = (distanceKm: number, mode: GameMode) => {
@@ -98,34 +85,7 @@ const pickWeightedSeed = (seeds: readonly SeedLocation[]): SeedLocation => {
   return seeds[seeds.length - 1];
 };
 
-export type GenerateCandidateOptions = {
-  /** Фиксированный индекс из SAKHA_LOCATION_SEEDS — один НП на раунд, без повторов в сессии. */
-  sakhaSeedIndex?: number;
-};
-
-export const buildShuffledIndexOrder = (length: number): number[] => {
-  const order = Array.from({ length }, (_, i) => i);
-  for (let i = order.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [order[i], order[j]] = [order[j], order[i]];
-  }
-  return order;
-};
-
-export const generateCandidateLocation = (mode: GameMode, bounds: Bounds, options?: GenerateCandidateOptions) => {
-  if (mode === "SAKHA") {
-    const fixed = options?.sakhaSeedIndex;
-    if (typeof fixed === "number" && fixed >= 0 && fixed < SAKHA_LOCATION_SEEDS.length) {
-      return randomLatLngNearSeed(SAKHA_LOCATION_SEEDS[fixed], bounds);
-    }
-    return randomLatLngNearSeed(pickWeightedSeed(SAKHA_LOCATION_SEEDS), bounds);
-  }
-
-  if (mode === "YAKUTSK") {
-    return randomLatLngNearSeed(pickWeightedSeed(YAKUTSK_LOCATION_SEEDS), bounds);
-  }
-
-  return randomLatLngInBounds(bounds);
-};
+export const generateCandidateLocation = (_mode: GameMode, bounds: Bounds) =>
+  randomLatLngNearSeed(pickWeightedSeed(YAKUTSK_LOCATION_SEEDS), bounds);
 
 export const getBoundsForMode = (mode: GameMode) => BOUNDS_BY_MODE[mode];

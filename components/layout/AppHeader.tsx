@@ -21,7 +21,7 @@ const AppHeader = ({ uiText, gameMode, gameState, currentRound, totalXP }: AppHe
       </span>
     </div>
     <div className="ml-auto flex shrink-0 items-center gap-2 text-xs font-semibold text-slate-900 md:mt-5 md:gap-3">
-      {gameMode && gameState !== "MODE_SELECT" && (
+      {gameMode && gameState !== "FINAL_RESULT" && (
         <div className="rounded-full bg-white/90 px-3 py-1 shadow">
           {uiText.round}: {Math.min(currentRound, TOTAL_ROUNDS)} {uiText.roundsShort} {TOTAL_ROUNDS}
         </div>

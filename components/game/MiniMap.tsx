@@ -62,7 +62,8 @@ const MiniMap = ({
     () => [(modeBounds.minLat + modeBounds.maxLat) / 2, (modeBounds.minLng + modeBounds.maxLng) / 2],
     [modeBounds]
   );
-  const startZoom = mode === "YAKUTSK" ? 10 : 3;
+  // Зум подобран под расширенные границы (Якутск + Покровск/Марха/Жатай).
+  const startZoom = 9;
   const expanded =
     gameState === "RESULT" ||
     (!isCoarsePointerUi && hovered) ||

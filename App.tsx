@@ -3,7 +3,6 @@ import {
   AppHeader,
   FinalResultsOverlay,
   MiniMap,
-  ModeSelectOverlay,
   ResultPanel,
   SettingsPanel,
   StreetView,
@@ -94,7 +93,7 @@ const App = () => {
     const prev = prevGameStateRef.current;
     if (gameState === "RESULT" && prev === "LOADING_RESULT") {
       setMobileMinimapDismissed(false);
-    } else if (gameState === "GUESSING" && (prev === "RESULT" || prev === "MODE_SELECT")) {
+    } else if (gameState === "GUESSING" && prev === "RESULT") {
       setMobileMinimapDismissed(false);
     }
     prevGameStateRef.current = gameState;
@@ -124,14 +123,12 @@ const App = () => {
     return () => window.removeEventListener("keydown", handleKey);
   }, [gameState, goToNextRound, isFinalRound, showFinalResults]);
 
-  const handleModeSelect = (mode: "YAKUTSK" | "SAKHA") => {
-    if (!isMapReady) {
-      return;
+  useEffect(() => {
+    if (isMapReady && !gameMode) {
+      resetLeaderboardState();
+      startGame();
     }
-
-    resetLeaderboardState();
-    startGame(mode);
-  };
+  }, [gameMode, isMapReady, resetLeaderboardState, startGame]);
 
   const handlePlayAgain = () => {
     resetSession();
@@ -170,10 +167,6 @@ const App = () => {
           onSelectLanguage={setLanguage}
         />
       </div>
-
-      {gameState === "MODE_SELECT" && (
-        <ModeSelectOverlay uiText={t} isMapReady={isMapReady} onSelectMode={handleModeSelect} />
-      )}
 
       {gameState === "FINAL_RESULT" && (
         <FinalResultsOverlay
@@ -243,7 +236,7 @@ const App = () => {
         </div>
       )}
 
-      {gameState === "LOADING_RESULT" && (
+      {gameState === "LOADING_RESULT" && ymapsApi && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/40">
           <div className="glass-panel rounded-2xl px-6 py-4 text-white shadow-xl">
             <div className="text-sm font-semibold">{loadingMessage}</div>
