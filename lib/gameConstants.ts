@@ -1,4 +1,4 @@
-import type { Bounds, GameMode, SeedLocation } from "./gameTypes.ts";
+import type { Bounds, GameMode, LatLng, SeedLocation } from "./gameTypes.ts";
 
 export const TOTAL_ROUNDS = 5;
 
@@ -9,6 +9,15 @@ export const BOUNDS_BY_MODE: Record<GameMode, Bounds> = {
     maxLat: 62.18,
     minLng: 129.1,
     maxLng: 130.1,
+  },
+};
+
+// Явный центр и стартовый зум миникарты. Геометрическая середина BOUNDS_BY_MODE
+// смещена на юг из-за Покровска, поэтому центр задаём вручную — площадь Ленина.
+export const MAP_VIEW_BY_MODE: Record<GameMode, { center: LatLng; zoom: number }> = {
+  YAKUTSK: {
+    center: { lat: 62.0272, lng: 129.7326 },
+    zoom: 9,
   },
 };
 

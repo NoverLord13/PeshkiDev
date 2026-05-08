@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { BOUNDS_BY_MODE } from "../../lib/gameConstants.ts";
+import { MAP_VIEW_BY_MODE } from "../../lib/gameConstants.ts";
 import type { GameMode, GameState, LatLng } from "../../lib/gameTypes.ts";
 import type {
   YandexEvent,
@@ -57,13 +57,12 @@ const MiniMap = ({
     height: window.innerHeight,
   }));
 
-  const modeBounds = useMemo(() => BOUNDS_BY_MODE[mode], [mode]);
-  const modeCenter = useMemo(
-    () => [(modeBounds.minLat + modeBounds.maxLat) / 2, (modeBounds.minLng + modeBounds.maxLng) / 2],
-    [modeBounds]
+  const modeView = useMemo(() => MAP_VIEW_BY_MODE[mode], [mode]);
+  const modeCenter = useMemo<[number, number]>(
+    () => [modeView.center.lat, modeView.center.lng],
+    [modeView]
   );
-  // Зум подобран под расширенные границы (Якутск + Покровск/Марха/Жатай).
-  const startZoom = 9;
+  const startZoom = modeView.zoom;
   const expanded =
     gameState === "RESULT" ||
     (!isCoarsePointerUi && hovered) ||
