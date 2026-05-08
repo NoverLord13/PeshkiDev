@@ -42,10 +42,14 @@ def create_app() -> FastAPI:
     )
 
     origins = settings.cors_origins
+    is_wildcard = origins == "*"
+    # Спецификация CORS запрещает связку Access-Control-Allow-Origin: *
+    # с Access-Control-Allow-Credentials: true. Поэтому при wildcard
+    # отключаем credentials, иначе браузер режет запросы как "Failed to fetch".
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"] if origins == "*" else origins,
-        allow_credentials=True,
+        allow_origins=["*"] if is_wildcard else origins,
+        allow_credentials=not is_wildcard,
         allow_methods=["*"],
         allow_headers=["*"],
     )

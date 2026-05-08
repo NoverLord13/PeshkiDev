@@ -13,7 +13,6 @@ from .config import get_settings
 
 
 class Base(DeclarativeBase):
-    """Базовый класс для всех ORM-моделей."""
 
 
 settings = get_settings()
@@ -32,7 +31,7 @@ SessionLocal = async_sessionmaker(
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
-    """FastAPI-зависимость, выдающая транзакционную сессию SQLAlchemy."""
+
 
     async with SessionLocal() as session:
         try:
@@ -43,7 +42,6 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 
 
 async def init_models() -> None:
-    """Создаёт таблицы по моделям при старте, если включена опция."""
 
     from . import models  # noqa: F401  — регистрируем модели в metadata.
 
